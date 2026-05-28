@@ -1,4 +1,4 @@
-# 🚀 SCHNELLSTART
+# 🚀 SCHNELLSTART für uns
 
 ## Lokal testen (JETZT auf Ihrem Mac)
 
