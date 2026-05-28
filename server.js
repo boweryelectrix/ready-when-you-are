@@ -47,7 +47,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static(__dirname));
 
 // Root route
@@ -61,8 +61,19 @@ app.get('/', (req, res) => {
 app.post('/api/print', upload.single('image'), async (req, res) => {
   console.log('\n📄 Print-Anfrage erhalten...');
 
-  const { prompt, sourceAuthor, sourceId, matchPercent, userGenerated } = req.body;
-  const imageBuffer = req.file ? req.file.buffer : null;
+  const { prompt, sourceAuthor, sourceId, matchPercent, userGenerated, imageData } = req.body;
+  let imageBuffer = req.file ? req.file.buffer : null;
+
+  if (!imageBuffer && imageData) {
+    try {
+      const base64 = typeof imageData === 'string' ? imageData.split(',').pop() : null;
+      if (base64) {
+        imageBuffer = Buffer.from(base64, 'base64');
+      }
+    } catch (err) {
+      console.error('Fehler beim Dekodieren von imageData:', err);
+    }
+  }
 
   if (!imageBuffer) {
     return res.status(400).json({ success: false, error: 'No image file received' });
@@ -77,11 +88,11 @@ app.post('/api/print', upload.single('image'), async (req, res) => {
     // Drucke den Beleg
     await printReceipt({
       imageBuffer,
-      prompt,
-      sourceAuthor,
-      sourceId,
-      matchPercent,
-      userGenerated
+      prompt: prompt || 'No prompt provided',
+      sourceAuthor: sourceAuthor || 'UNKNOWN',
+      sourceId: sourceId || 'UNKNOWN',
+      matchPercent: Number(matchPercent) || 0,
+      userGenerated: userGenerated || 'ANONYMOUS'
     });
 
     res.json({ 

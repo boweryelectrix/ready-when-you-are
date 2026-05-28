@@ -32,14 +32,35 @@
 
   <!-- PHASE 1: GENERATING -->
   <div id="phase-generating" class="phase">
-    <div class="gen-status">
-      <p class="gen-label">Generating your visual</p>
+    <div class="gen-topbar">
+      <span class="gen-eyebrow">PROCESSING REQUEST</span>
       <div class="progress-bar-track">
         <div id="progress-bar" class="progress-bar-fill"></div>
       </div>
       <p id="gen-detail" class="gen-detail">Initialising model…</p>
     </div>
-    <canvas id="gen-canvas" class="gen-canvas"></canvas>
+    <div class="data-grid-wrap">
+      <canvas id="data-canvas" class="data-canvas"></canvas>
+      <div class="data-grid-fade"></div>
+    </div>
+    <div class="gen-counters">
+      <div class="gctr">
+        <span class="gctr-key">Corpus</span>
+        <span class="gctr-val" id="gm-corpus">—</span>
+      </div>
+      <div class="gctr">
+        <span class="gctr-key">Rejected samples scanned</span>
+        <span class="gctr-val" id="gm-rejected">—</span>
+      </div>
+      <div class="gctr">
+        <span class="gctr-key">Latent dimensions</span>
+        <span class="gctr-val" id="gm-dims">—</span>
+      </div>
+      <div class="gctr">
+        <span class="gctr-key">Epoch</span>
+        <span class="gctr-val" id="gm-epoch">—</span>
+      </div>
+    </div>
   </div>
 
   <!-- PHASE 2: RESULT -->
@@ -47,58 +68,85 @@
     <div class="result-header">
       <span class="system-label">OUTPUT READY</span>
     </div>
-    <div class="result-body">
-      <canvas id="result-canvas" class="result-canvas"></canvas>
-      <div class="result-meta">
-        <p class="meta-line"><span class="meta-key">Model</span><span class="meta-val">Angewandte–Gen v0.3</span></p>
-        <p class="meta-line"><span class="meta-key">Training samples</span><span class="meta-val" id="sample-count">—</span></p>
-        <p class="meta-line"><span class="meta-key">Similarity index</span><span class="meta-val" id="similarity-val">—</span></p>
-        <p class="meta-line"><span class="meta-key">Prompt</span><span class="meta-val" id="prompt-echo">—</span></p>
-      </div>
+    <div class="result-hero-wrap">
+      <canvas id="result-canvas" class="result-canvas-hero"></canvas>
     </div>
-    <div class="print-cta">
-      <p class="print-question">Are you ready to print?</p>
-      <button id="print-btn" class="btn-primary">Print my visual</button>
+    <div class="result-approve-wrap">
+      <button id="print-btn" class="btn-approve">APPROVE &amp; PRINT MY WORK</button>
     </div>
   </div>
 
-  <!-- PHASE 3: PRINTING + ANALYSIS -->
+  <!-- PHASE 3: PRINT & FORENSIC REVEAL -->
   <div id="phase-printing" class="phase">
 
-    <div class="analysis-grid">
-      <!-- Left: your output -->
-      <div class="analysis-col">
-        <p class="analysis-label">YOUR OUTPUT</p>
-        <div class="analysis-imgwrap">
-          <canvas id="analysis-output" class="analysis-img"></canvas>
+    <!-- Forensic top bar – slides down when match is found -->
+    <div class="forensic-bar" id="forensic-bar">
+      <span class="forensic-bar-label">MATCH FOUND</span>
+      <span class="forensic-bar-pct" id="comparison-pct">—</span>
+      <span class="forensic-bar-label">SIMILARITY</span>
+    </div>
+
+    <!-- Split container -->
+    <div id="split-wrap" class="split-wrap">
+
+      <!-- Left: your generated output -->
+      <div class="split-side split-side--your" id="split-your">
+        <p class="split-label">YOUR OUTPUT</p>
+        <div class="split-imgbox">
+          <canvas id="analysis-output" class="split-canvas"></canvas>
         </div>
-        <p class="analysis-meta" id="analysis-output-meta">prompt #—</p>
+        <p class="split-caption" id="analysis-output-meta">—</p>
       </div>
 
-      <!-- Center: comparison status -->
-      <div class="analysis-center">
-        <p class="comparison-pct" id="comparison-pct">0%</p>
-        <p class="comparison-label">MATCH</p>
-        <div class="comparison-bars">
-          <div class="cbar"><span class="cbar-key">Composition</span><span class="cbar-val" id="cbar-1">—</span></div>
-          <div class="cbar"><span class="cbar-key">Colour palette</span><span class="cbar-val" id="cbar-2">—</span></div>
-          <div class="cbar"><span class="cbar-key">Form language</span><span class="cbar-val" id="cbar-3">—</span></div>
-          <div class="cbar"><span class="cbar-key">Typographic system</span><span class="cbar-val" id="cbar-4">—</span></div>
-        </div>
-        <p class="comparison-verdict" id="comparison-verdict">Searching training set…</p>
+      <!-- Center divider with connection lines -->
+      <div class="split-divider" id="split-divider">
+        <svg id="connection-lines" class="connection-svg" viewBox="0 0 40 300" preserveAspectRatio="none">
+          <line class="conn-line" x1="0" y1="60"  x2="40" y2="60"  stroke-dasharray="4 3"/>
+          <line class="conn-line" x1="0" y1="130" x2="40" y2="130" stroke-dasharray="4 3"/>
+          <line class="conn-line" x1="0" y1="195" x2="40" y2="195" stroke-dasharray="4 3"/>
+          <line class="conn-line" x1="0" y1="248" x2="40" y2="248" stroke-dasharray="4 3"/>
+        </svg>
+        <span class="divider-label" id="comparison-verdict">Analysing…</span>
       </div>
 
-      <!-- Right: source work -->
-      <div class="analysis-col">
-        <p class="analysis-label">SOURCE WORK</p>
-        <div class="analysis-imgwrap">
-          <div id="analysis-source" class="analysis-img analysis-source-img"></div>
+      <!-- Right: source work (forensic) -->
+      <div class="split-side split-side--source" id="split-source">
+        <p class="split-label split-label--forensic">SOURCE WORK · RESTRICTED</p>
+        <div class="split-imgbox">
+          <div id="analysis-source" class="split-source-img">
+            <!-- Overlay shown before image is revealed -->
+            <div class="source-overlay" id="source-overlay">
+              <div class="source-overlay-scanline"></div>
+              <p class="source-overlay-text">RETRIEVING ARCHIVE…</p>
+              <p class="source-overlay-id" id="source-overlay-id">ID —</p>
+            </div>
+          </div>
         </div>
-        <p class="analysis-meta">
-          <span id="source-author">—</span><br>
-          <span class="dim" id="source-meta">rejected · entrance exam 2024</span>
-        </p>
+        <div class="split-source-meta">
+          <div class="smeta-row">
+            <span class="smeta-key">Original Author</span>
+            <span class="smeta-val" id="source-author">—</span>
+          </div>
+          <div class="smeta-row">
+            <span class="smeta-key">Status</span>
+            <span class="smeta-val smeta-red" id="source-meta">Rejected by Jury</span>
+          </div>
+          <div class="smeta-row">
+            <span class="smeta-key">Reason</span>
+            <span class="smeta-val" id="source-reason">Not suitable for brand identity</span>
+          </div>
+          <div class="smeta-row cmetrics">
+            <span class="smeta-key">Analysis</span>
+            <span class="smeta-val">
+              <span class="cmetric-pill"><span class="cmetric-name">Composition</span><span id="cbar-1">—</span></span>
+              <span class="cmetric-pill"><span class="cmetric-name">Colour</span><span id="cbar-2">—</span></span>
+              <span class="cmetric-pill"><span class="cmetric-name">Form</span><span id="cbar-3">—</span></span>
+              <span class="cmetric-pill"><span class="cmetric-name">Type</span><span id="cbar-4">—</span></span>
+            </span>
+          </div>
+        </div>
       </div>
+
     </div>
 
     <p id="print-status" class="print-status">Sending to printer…</p>

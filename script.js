@@ -1,14 +1,18 @@
 /* ══════════════════════════════════════════════════════════════
    INSTALLATION – "Submit Early"
-   Phase flow: INTRO → GENERATING → RESULT → PRINTING → REVEAL
+   States: IDLE → GENERATING → RESULT_READY → REVEALED
    ══════════════════════════════════════════════════════════════ */
 
-// ── Tagline ──────────────────────────────────────────────────
-const TAGLINES = [
-  "Ready when you are.",
-];
+// ── State machine ─────────────────────────────────────────────
+const STATE = { IDLE: 'IDLE', GENERATING: 'GENERATING', RESULT_READY: 'RESULT_READY', REVEALED: 'REVEALED' };
+let appState = STATE.IDLE;
 
-// ── DOM refs ─────────────────────────────────────────────────
+function setState(s) { appState = s; }
+
+// ── Tagline ───────────────────────────────────────────────────
+const TAGLINES = ["Ready when you are."];
+
+// ── DOM refs ──────────────────────────────────────────────────
 const phases = {
   intro:      document.getElementById('phase-intro'),
   generating: document.getElementById('phase-generating'),
@@ -17,102 +21,109 @@ const phases = {
   reveal:     document.getElementById('phase-reveal'),
 };
 
-const taglineEl    = document.getElementById('tagline');
-const promptInput  = document.getElementById('user-prompt');
-const charCount    = document.getElementById('char-count');
-const generateBtn  = document.getElementById('generate-btn');
-const progressBar  = document.getElementById('progress-bar');
-const genDetail    = document.getElementById('gen-detail');
-const genCanvas    = document.getElementById('gen-canvas');
-const resultCanvas = document.getElementById('result-canvas');
-const sampleCount  = document.getElementById('sample-count');
-const similarityVal= document.getElementById('similarity-val');
-const promptEcho   = document.getElementById('prompt-echo');
-const printBtn     = document.getElementById('print-btn');
-const printStatus  = document.getElementById('print-status');
-const rejectedCount= document.getElementById('rejected-count');
-const flagPercent  = document.getElementById('flag-percent');
-const restartBtn   = document.getElementById('restart-btn');
+const taglineEl      = document.getElementById('tagline');
+const promptInput    = document.getElementById('user-prompt');
+const charCount      = document.getElementById('char-count');
+const generateBtn    = document.getElementById('generate-btn');
+const progressBar    = document.getElementById('progress-bar');
+const genDetail      = document.getElementById('gen-detail');
+const dataCanvas     = document.getElementById('data-canvas');
+const resultCanvas   = document.getElementById('result-canvas');
+const printBtn       = document.getElementById('print-btn');
+const printStatus    = document.getElementById('print-status');
+const rejectedCount  = document.getElementById('rejected-count');
+const flagPercent    = document.getElementById('flag-percent');
+const restartBtn     = document.getElementById('restart-btn');
 
-// Analysis refs
-const analysisOutput   = document.getElementById('analysis-output');
+// Generating counters
+const gmCorpus   = document.getElementById('gm-corpus');
+const gmRejected = document.getElementById('gm-rejected');
+const gmDims     = document.getElementById('gm-dims');
+const gmEpoch    = document.getElementById('gm-epoch');
+
+// Split / forensic refs
+const forensicBar       = document.getElementById('forensic-bar');
+const splitWrap         = document.getElementById('split-wrap');
+const splitSource       = document.getElementById('split-source');
+const comparisonPct     = document.getElementById('comparison-pct');
+const analysisOutput    = document.getElementById('analysis-output');
 const analysisOutputMeta = document.getElementById('analysis-output-meta');
-const comparisonPct    = document.getElementById('comparison-pct');
+const analysisSourceEl  = document.getElementById('analysis-source');
+const sourceOverlay     = document.getElementById('source-overlay');
+const sourceOverlayId   = document.getElementById('source-overlay-id');
+const sourceAuthor      = document.getElementById('source-author');
+const sourceMeta        = document.getElementById('source-meta');
+const sourceReason      = document.getElementById('source-reason');
+const comparisonVerdict = document.getElementById('comparison-verdict');
 const cbar1 = document.getElementById('cbar-1');
 const cbar2 = document.getElementById('cbar-2');
 const cbar3 = document.getElementById('cbar-3');
 const cbar4 = document.getElementById('cbar-4');
-const comparisonVerdict = document.getElementById('comparison-verdict');
-const sourceAuthor = document.getElementById('source-author');
-const sourceMeta   = document.getElementById('source-meta');
+const connLines = document.querySelectorAll('.conn-line');
 
-
-
-// ── Generated visuals with their sources ──────────────────────
+// ── Visual pairs (generated ↔ source mapping) ─────────────────
 const VISUAL_PAIRS = [
-  { 
+  {
     generated: 'images/generated-1.png',
     source: 'images/source-1.png',
     author: 'L. WEBER',
     id: 'A-2024-0418',
-    year: 2024
+    year: 2024,
+    reason: 'Insufficient conceptual development'
   },
-  { 
+  {
     generated: 'images/generated-2.png',
     source: 'images/source-2.png',
     author: 'M. KOWALSKI',
     id: 'A-2024-0291',
-    year: 2024
+    year: 2024,
+    reason: 'Not suitable for brand identity'
   },
-  { 
+  {
     generated: 'images/generated-3.png',
     source: 'images/source-3.png',
     author: 'S. NAKAMURA',
     id: 'A-2023-0876',
-    year: 2023
+    year: 2023,
+    reason: 'Technical execution below threshold'
   },
-  { 
+  {
     generated: 'images/generated-4.png',
     source: 'images/source-4.png',
     author: 'A. PETROV',
     id: 'A-2024-1102',
-    year: 2024
+    year: 2024,
+    reason: 'Aesthetic not aligned with programme'
   },
 ];
 
-// ── State ────────────────────────────────────────────────────
-let currentPhase = 'intro';
-let taglineIndex  = 0;
-let taglineTimer  = null;
-let userPrompt    = '';
 let selectedPair  = null;
+let userPrompt    = '';
+let dataGridInterval = null;
+// pairIndex überlebt Seiten-Reloads via localStorage
+// Startet bei 2 damit sofort Pair 3 & 4 dran kommen
+let pairIndex = parseInt(localStorage.getItem('pairIndex') || '2');
 
-// ── Phase transition ─────────────────────────────────────────
+// ── Phase transition ──────────────────────────────────────────
 function showPhase(name) {
   Object.entries(phases).forEach(([k, el]) => {
     el.classList.toggle('active', k === name);
   });
-  currentPhase = name;
 }
 
-// ── Tagline typewriter ───────────────────────────────────────
-function typeText(el, text, speed = 42, cb) {
+// ── Tagline typewriter ────────────────────────────────────────
+function typeText(el, text, speed, cb) {
+  speed = speed || 42;
   el.textContent = '';
   let i = 0;
   const tick = () => {
-    if (i < text.length) {
-      el.textContent += text[i++];
-      setTimeout(tick, speed);
-    } else if (cb) {
-      cb();
-    }
+    if (i < text.length) { el.textContent += text[i++]; setTimeout(tick, speed); }
+    else if (cb) { cb(); }
   };
   tick();
 }
 
-function cycleTagline() {
-  typeText(taglineEl, TAGLINES[0], 40);
-}
+function cycleTagline() { typeText(taglineEl, TAGLINES[0], 40); }
 
 // ── Prompt input ──────────────────────────────────────────────
 promptInput.addEventListener('input', () => {
@@ -126,289 +137,331 @@ promptInput.addEventListener('input', () => {
 generateBtn.addEventListener('click', startGenerating);
 
 function startGenerating() {
-  clearTimeout(taglineTimer);
+  setState(STATE.GENERATING);
   showPhase('generating');
+  runDataGridAnimation();
+  runGeneratingCounters();
   runGeneratingPhase();
 }
 
-// ── Generating phase ──────────────────────────────────────────
+// ── Data grid animation ───────────────────────────────────────
+const DATA_CHARS = '0123456789ABCDEF·░▒█╌─┄'.split('');
+
+function runDataGridAnimation() {
+  const canvas = dataCanvas;
+  const parent = canvas.parentElement;
+  canvas.width  = parent.offsetWidth  || 700;
+  canvas.height = parent.offsetHeight || 300;
+
+  const ctx = canvas.getContext('2d');
+  const cellW = 28;
+  const cellH = 18;
+  const cols = Math.floor(canvas.width  / cellW);
+  const rows = Math.floor(canvas.height / cellH);
+
+  // Each cell: { char, locked, lockProgress (0–1), age }
+  const grid = Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () => ({
+      char: DATA_CHARS[Math.floor(Math.random() * DATA_CHARS.length)],
+      locked: false,
+      lockProgress: 0,
+    }))
+  );
+
+  let globalProgress = 0; // 0–1 mirroring generation progress
+
+  const draw = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.font = '10px Menlo, Courier New, monospace';
+
+    const lockThreshold = globalProgress;
+
+    grid.forEach((row, ri) => {
+      row.forEach((cell, ci) => {
+        // Randomise unlocked cells
+        if (!cell.locked && Math.random() > 0.65) {
+          cell.char = DATA_CHARS[Math.floor(Math.random() * DATA_CHARS.length)];
+        }
+
+        // Lock cells from top-left as progress grows
+        const cellPos = (ri * cols + ci) / (rows * cols);
+        if (!cell.locked && cellPos < lockThreshold) {
+          cell.locked = true;
+          cell.char = DATA_CHARS[Math.floor(Math.random() * DATA_CHARS.length)];
+        }
+
+        // Opacity: locked cells brighter
+        const alpha = cell.locked ? 0.65 : 0.12 + Math.random() * 0.1;
+        ctx.fillStyle = cell.locked
+          ? `rgba(17,17,17,${alpha})`
+          : `rgba(17,17,17,${alpha})`;
+
+        ctx.fillText(cell.char, ci * cellW + 4, ri * cellH + 13);
+      });
+    });
+  };
+
+  // Expose progress setter so generating phase can update it
+  dataCanvas._setProgress = (p) => { globalProgress = p; };
+
+  clearInterval(dataGridInterval);
+  dataGridInterval = setInterval(draw, 60);
+}
+
+function stopDataGridAnimation() {
+  clearInterval(dataGridInterval);
+  dataGridInterval = null;
+}
+
+// ── Generating counters ───────────────────────────────────────
+function runGeneratingCounters() {
+  const corpusTarget   = 11400 + Math.floor(Math.random() * 2000);
+  const rejectedTarget = 847   + Math.floor(Math.random() * 400);
+  const epochTarget    = 24    + Math.floor(Math.random() * 8);
+
+  gmDims.textContent = '512';
+
+  animateCounter(gmCorpus,   0, corpusTarget,   4200, (v) => v.toLocaleString());
+  animateCounter(gmRejected, 0, rejectedTarget, 3600, (v) => v.toLocaleString());
+  animateCounter(gmEpoch,    1, epochTarget,    5000, (v) => v.toString());
+}
+
+function animateCounter(el, from, to, duration, fmt) {
+  const start = performance.now();
+  const tick = (now) => {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const val = Math.floor(from + (to - from) * ease);
+    el.textContent = fmt(val);
+    if (t < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+// ── Generating phase steps ────────────────────────────────────
 const GEN_STEPS = [
   [0,   "Initialising model…"],
-  [8,   "Loading training corpus…"],
-  [20,  "Analysing prompt semantics…"],
-  [35,  "Sampling latent space…"],
-  [52,  "Rendering pass 1 / 3…"],
-  [68,  "Rendering pass 2 / 3…"],
-  [82,  "Rendering pass 3 / 3…"],
-  [93,  "Applying post-processing…"],
+  [6,   "Loading rejected corpus…"],
+  [17,  "Scanning archived submissions…"],
+  [30,  "Weighting student datasets…"],
+  [44,  "Sampling latent space…"],
+  [59,  "Cross-referencing portfolio archive…"],
+  [72,  "Rendering visual pass 1 / 3…"],
+  [83,  "Rendering visual pass 2 / 3…"],
+  [92,  "Rendering visual pass 3 / 3…"],
+  [98,  "Applying post-processing…"],
   [100, "Complete."],
 ];
 
 function runGeneratingPhase() {
-  const size = 360;
-  genCanvas.width  = size;
-  genCanvas.height = size;
-  genCanvas.classList.remove('visible');
+  selectedPair = VISUAL_PAIRS[pairIndex % VISUAL_PAIRS.length];
+  pairIndex++;
+  localStorage.setItem('pairIndex', pairIndex);
 
   let stepIdx = 0;
 
   const advance = () => {
     if (stepIdx >= GEN_STEPS.length) {
-      // generation done – copy to result canvas and move on
-      setTimeout(transitionToResult, 600);
+      setTimeout(transitionToResult, 700);
       return;
     }
     const [pct, label] = GEN_STEPS[stepIdx++];
     progressBar.style.width = pct + '%';
     genDetail.textContent   = label;
 
-    if (pct >= 50 && !genCanvas.classList.contains('visible')) {
-      drawGeneratedVisual(genCanvas);
-      genCanvas.classList.add('visible');
+    if (dataCanvas._setProgress) {
+      dataCanvas._setProgress(pct / 100);
     }
-    setTimeout(advance, pct < 35 ? 600 : pct < 80 ? 900 : 400);
+
+    setTimeout(advance, pct < 30 ? 700 : pct < 75 ? 950 : 450);
   };
   advance();
 }
 
-// ── Canvas visual – load actual image ────────────────────────
-function drawGeneratedVisual(canvas) {
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
-  
-  // Wähle zufälliges Visual-Pair aus dem Pool
-  selectedPair = VISUAL_PAIRS[Math.floor(Math.random() * VISUAL_PAIRS.length)];
-  
-  // Lade und zeichne das Bild
-  const img = new Image();
-  img.onload = () => {
-    // Passe Canvas an Bild-Proportionen an (max 360px breit)
-    const maxSize = 360;
-    const aspectRatio = img.height / img.width;
-    canvas.width = maxSize;
-    canvas.height = maxSize * aspectRatio;
-    
-    // Zeichne Bild in voller Größe (ohne Zoom/Crop)
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    
-    // Starte Blur-Animation (unscharf → scharf)
-    animateSharpening(canvas);
-  };
-  
-  img.onerror = () => {
-    // Fallback: Platzhalter wenn Bild nicht lädt
-    ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(0, 0, w, h);
-    ctx.font = '12px Menlo, Courier New, monospace';
-    ctx.fillStyle = '#444';
-    ctx.textAlign = 'center';
-    ctx.fillText('[ image not found ]', w / 2, h / 2);
-    ctx.textAlign = 'left';
-  };
-  
-  img.src = selectedPair.generated;
-}
-
-// ── Blur Animation (wird graduell schärfer) ──────────────────
-function animateSharpening(canvas) {
-  let blur = 20; // Start mit starkem Blur
-  let startTime = null;
-  const blurDuration = 3000; // 3 Sekunden blurry bleiben
-  const sharpenDuration = 800; // 0.8 Sekunden schnell schärfen am Ende
-  const totalDuration = blurDuration + sharpenDuration;
-  
-  const step = (timestamp) => {
-    if (!startTime) startTime = timestamp;
-    const elapsed = timestamp - startTime;
-    
-    if (elapsed < blurDuration) {
-      // Bleib stark blurry während der Generation
-      blur = 20;
-    } else {
-      // Schärfe am Ende schnell
-      const sharpenProgress = (elapsed - blurDuration) / sharpenDuration;
-      blur = 20 * (1 - sharpenProgress);
-      if (blur < 0) blur = 0;
-    }
-    
-    canvas.style.filter = `blur(${blur}px)`;
-    
-    if (elapsed < totalDuration) {
-      requestAnimationFrame(step);
-    }
-  };
-  requestAnimationFrame(step);
-}
-
 // ── Transition to result ──────────────────────────────────────
 function transitionToResult() {
+  stopDataGridAnimation();
+  setState(STATE.RESULT_READY);
+
   const ctx = resultCanvas.getContext('2d');
-  
   const img = new Image();
+
   img.onload = () => {
-    // Passe Canvas an Bild-Proportionen an
-    const maxSize = 360;
-    const aspectRatio = img.height / img.width;
-    resultCanvas.width = maxSize;
-    resultCanvas.height = maxSize * aspectRatio;
-    
-    // Zeichne Bild in voller Größe
+    const maxW = Math.min(480, window.innerWidth * 0.8);
+    const scale = maxW / img.width;
+    resultCanvas.width  = img.width  * scale;
+    resultCanvas.height = img.height * scale;
     ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
     ctx.drawImage(img, 0, 0, resultCanvas.width, resultCanvas.height);
+
+    showPhase('result');
+    setTimeout(() => resultCanvas.classList.add('visible'), 60);
   };
-  
+
   img.onerror = () => {
-    // Fallback
-    ctx.fillStyle = '#d4d4d4';
-    ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = '#888';
-    ctx.font = '20px Menlo, Courier New, monospace';
+    resultCanvas.width  = 360;
+    resultCanvas.height = 360;
+    ctx.fillStyle = '#e0e0e0';
+    ctx.fillRect(0, 0, 360, 360);
+    ctx.fillStyle = '#aaa';
+    ctx.font = '12px Menlo, Courier New, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('[ generated image ]', size / 2, size / 2);
+    ctx.fillText('[ image not found ]', 180, 185);
     ctx.textAlign = 'left';
+    showPhase('result');
+    setTimeout(() => resultCanvas.classList.add('visible'), 60);
   };
-  
+
   img.src = selectedPair.generated;
-
-  // Fake metadata
-  const samples    = 7000 + Math.floor(Math.random() * 5000);
-  const similarity = (74 + Math.floor(Math.random() * 20));
-  sampleCount.textContent  = samples.toLocaleString();
-  similarityVal.textContent = similarity + '%';
-  promptEcho.textContent   = userPrompt.length > 60 ? userPrompt.slice(0, 60) + '…' : userPrompt;
-
-  showPhase('result');
 }
 
-// ── Print ─────────────────────────────────────────────────────
+// ── Print button ──────────────────────────────────────────────
 printBtn.addEventListener('click', startPrinting);
 
 function startPrinting() {
-  // Load generated image onto analysis canvas
+  setState(STATE.REVEALED);
+
+  // Load generated image onto the split canvas
   const aCtx = analysisOutput.getContext('2d');
   const img = new Image();
+
   img.onload = () => {
-    // Passe Canvas an Bild-Proportionen an
-    const maxSize = 440;
-    const aspectRatio = img.height / img.width;
-    analysisOutput.width = maxSize;
-    analysisOutput.height = maxSize * aspectRatio;
-    
+    // Use more vertical space (70vh) so image is big before split
+    const maxH = Math.min(window.innerHeight * 0.70, 600);
+    const scale = maxH / img.height;
+    analysisOutput.width  = img.width  * scale;
+    analysisOutput.height = img.height * scale;
     aCtx.clearRect(0, 0, analysisOutput.width, analysisOutput.height);
     aCtx.drawImage(img, 0, 0, analysisOutput.width, analysisOutput.height);
   };
-  
+
   img.onerror = () => {
-    aCtx.fillStyle = '#d4d4d4';
-    aCtx.fillRect(0, 0, 440, 440);
-    aCtx.fillStyle = '#888';
-    aCtx.font = '12px Menlo, Courier New, monospace';
-    aCtx.textAlign = 'center';
-    aCtx.fillText('[ generated image ]', 220, 220);
-    aCtx.textAlign = 'left';
+    analysisOutput.width  = 320;
+    analysisOutput.height = 450;
+    aCtx.fillStyle = '#e0e0e0';
+    aCtx.fillRect(0, 0, 320, 450);
   };
-  
+
   img.src = selectedPair.generated;
 
-  // Verwende die passende Source aus dem Pair
-  sourceAuthor.textContent = selectedPair.author;
-  sourceMeta.textContent   = `submission ${selectedPair.id} · rejected · entrance exam ${selectedPair.year}`;
-  analysisOutputMeta.textContent = `prompt #${1000 + Math.floor(Math.random() * 9000)} · user-generated`;
-  
-  // Lade Source-Bild (passend zum generierten Bild) als IMG Element
-  const analysisSourceEl = document.getElementById('analysis-source');
-  if (analysisSourceEl) {
-    analysisSourceEl.innerHTML = ''; // Clear previous content
-    const sourceImg = document.createElement('img');
-    sourceImg.src = selectedPair.source;
-    sourceImg.style.width = '100%';
-    sourceImg.style.height = '100%';
-    sourceImg.style.objectFit = 'contain';
-    sourceImg.style.objectPosition = 'center';
-    sourceImg.style.display = 'block';
-    analysisSourceEl.appendChild(sourceImg);
-  }
+  // Load source image (hidden behind overlay until reveal)
+  // Remove any previous img but keep the overlay
+  const prevImg = analysisSourceEl.querySelector('img');
+  if (prevImg) prevImg.remove();
+  const sourceImg = document.createElement('img');
+  sourceImg.src = selectedPair.source;
+  sourceImg.alt = 'Source work';
+  analysisSourceEl.appendChild(sourceImg);
+  // Reset overlay
+  if (sourceOverlay) sourceOverlay.classList.remove('hidden');
+  if (sourceOverlayId) sourceOverlayId.textContent = 'ID ' + selectedPair.id;
 
-  // Reset analysis state
-  comparisonPct.textContent = '0%';
-  comparisonPct.style.color = '';
+  // Populate metadata
+  analysisOutputMeta.textContent = `prompt #${1000 + Math.floor(Math.random() * 9000)} · user-generated`;
+  sourceAuthor.textContent = selectedPair.author;
+  sourceMeta.textContent   = `Rejected · Entrance Exam ${selectedPair.year} · ID ${selectedPair.id}`;
+  sourceReason.textContent = selectedPair.reason;
+
+  // Reset state
+  comparisonPct.textContent = '—';
+  forensicBar.classList.remove('visible');
+  splitWrap.classList.remove('split-revealed');
+  comparisonVerdict.textContent = 'Analysing…';
+  comparisonVerdict.classList.remove('alert');
+  connLines.forEach(l => l.classList.remove('visible'));
+  printStatus.textContent = 'Printing — analysing output in real time…';
   cbar1.textContent = '—';
   cbar2.textContent = '—';
   cbar3.textContent = '—';
   cbar4.textContent = '—';
-  comparisonVerdict.classList.remove('alert');
-  comparisonVerdict.textContent = 'Searching training set…';
-  printStatus.textContent = 'Printing — analysing output in real time…';
 
   showPhase('printing');
-
-  setTimeout(runAnalysisSequence, 300);
+  setTimeout(runForensicSequence, 300);
 }
 
-function runAnalysisSequence() {
-  const finalPct = 94 + Math.floor(Math.random() * 5); // 94–98 %
+// ── Forensic analysis sequence ────────────────────────────────
+function runForensicSequence() {
+  const finalPct = 91 + Math.floor(Math.random() * 7); // 91–97%
 
-  // Step-by-step verdict messages that reference the *generated* visual
+  // Verdict messages
   const verdictSteps = [
-    [600,   'Decomposing generated image…'],
-    [1400,  'Extracting visual features…'],
-    [2200,  'Indexing colour, form, layout…'],
-    [3000,  'Cross-referencing training set…'],
-    [3800,  'Match candidate located.'],
-    [4400,  'Aligning pixel regions…'],
+    [400,  'Decomposing output…'],
+    [1100, 'Extracting visual features…'],
+    [1900, 'Indexing colour, form, layout…'],
+    [2700, 'Cross-referencing training set…'],
+    [3500, 'Match candidate located.'],
+    [4100, 'Aligning pixel regions…'],
   ];
   verdictSteps.forEach(([t, txt]) => {
     setTimeout(() => { comparisonVerdict.textContent = txt; }, t);
   });
 
-  // Percentage counts up
+  // Percentage counts up → triggers reveal
   setTimeout(() => {
     let p = 0;
     const tick = () => {
-      p += 1 + Math.random() * 2;
-      if (p >= finalPct) { p = finalPct; }
+      p += 1 + Math.random() * 2.5;
+      if (p >= finalPct) p = finalPct;
       comparisonPct.textContent = Math.floor(p) + '%';
-      if (p < finalPct) {
-        setTimeout(tick, 40);
-      }
+      if (p < finalPct) setTimeout(tick, 35);
     };
     tick();
-  }, 700);
+  }, 600);
 
-  // Individual metric values fill in
+  // Metric values
   const metrics = [
-    [cbar1, 92 + Math.floor(Math.random() * 6)],
-    [cbar2, 88 + Math.floor(Math.random() * 10)],
-    [cbar3, 90 + Math.floor(Math.random() * 8)],
-    [cbar4, 95 + Math.floor(Math.random() * 4)],
+    [cbar1, 90 + Math.floor(Math.random() * 8)],
+    [cbar2, 87 + Math.floor(Math.random() * 10)],
+    [cbar3, 89 + Math.floor(Math.random() * 9)],
+    [cbar4, 93 + Math.floor(Math.random() * 5)],
   ];
   metrics.forEach(([el, val], i) => {
-    setTimeout(() => { el.textContent = val + '%'; }, 1200 + i * 500);
+    setTimeout(() => { el.textContent = val + '%'; }, 1400 + i * 500);
   });
 
-  // Final verdict – 1:1 copy
+  // SPLIT REVEAL: trigger at 4.6s
+  setTimeout(triggerSplitReveal, 4600);
+
+  // Final verdict
   setTimeout(() => {
     comparisonVerdict.classList.add('alert');
     comparisonVerdict.textContent = '1:1 COPY OF SOURCE WORK';
-    comparisonPct.style.color = '#c0392b';
     printStatus.textContent = 'Output flagged. Sending to thermal printer…';
-  }, 5200);
+  }, 5400);
 
-  // Sende an Thermodrucker
-  setTimeout(() => {
-    sendToPrinter();
-  }, 6000);
+  // Send to printer – früh auslösen damit der Drucker sofort startet
+  setTimeout(sendToPrinter, 800);
 
   // Move to reveal
-  setTimeout(() => {
-    finishPrinting();
-  }, 8000);
+  setTimeout(finishPrinting, 9000);
 }
 
+// ── Split reveal animation ────────────────────────────────────
+function triggerSplitReveal() {
+  // Show forensic bar
+  forensicBar.classList.add('visible');
+
+  // Trigger CSS split animation (left shrinks to 50%, right grows to 50%)
+  splitWrap.classList.add('split-revealed');
+
+  // After panel slides in: hide overlay, show source image
+  setTimeout(() => {
+    if (sourceOverlay) sourceOverlay.classList.add('hidden');
+    const sourceImg = analysisSourceEl.querySelector('img');
+    if (sourceImg) {
+      // Small delay so overlay fade-out is visible first
+      setTimeout(() => sourceImg.classList.add('revealed'), 200);
+    }
+  }, 1100);
+
+  // Draw connection lines with stagger
+  connLines.forEach((line, i) => {
+    setTimeout(() => line.classList.add('visible'), 1000 + i * 220);
+  });
+}
+
+// ── Finish and move to text reveal ───────────────────────────
 function finishPrinting() {
-  // Populate reveal data
   const rejected = 847 + Math.floor(Math.random() * 400);
   rejectedCount.textContent = rejected.toLocaleString();
   flagPercent.textContent   = comparisonPct.textContent;
@@ -418,9 +471,9 @@ function finishPrinting() {
   showPhase('reveal');
 }
 
-// ── Drucken ──────────────────────────────────────────────────
+// ── Thermal printer request ───────────────────────────────────
 async function sendToPrinter() {
-  printStatus.textContent = 'Sending to printer…';
+  printStatus.textContent = '▶ Sending to printer…';
 
   try {
     const imgResponse = await fetch(selectedPair.generated);
@@ -432,37 +485,42 @@ async function sendToPrinter() {
     formData.append('prompt', userPrompt);
     formData.append('sourceAuthor', selectedPair.author);
     formData.append('sourceId', selectedPair.id);
-    formData.append('matchPercent', comparisonPct.textContent.replace('%', ''));
+    formData.append('matchPercent', comparisonPct.textContent.replace('%', '').trim() || '0');
     formData.append('userGenerated', 'ANONYMOUS');
 
-    const printResponse = await fetch('/api/print', {
-      method: 'POST',
-      body: formData
-    });
-
+    const printResponse = await fetch('/api/print', { method: 'POST', body: formData });
     const result = await printResponse.json();
 
     if (result.success) {
       printStatus.textContent = result.printerAvailable
-        ? 'Printed successfully.'
-        : 'Print simulated (no printer connected).';
+        ? '✓ Printed.'
+        : '✓ Print simulated (no printer connected).';
     } else {
       printStatus.textContent = 'Print error: ' + result.error;
+      console.error('Print error from server:', result.error);
     }
   } catch (err) {
-    console.error('Print error:', err);
-    printStatus.textContent = 'Failed to send to printer.';
+    console.error('Print fetch error:', err);
+    printStatus.textContent = 'Failed to reach printer. Check server.';
   }
 }
 
 // ── Restart ───────────────────────────────────────────────────
 restartBtn.addEventListener('click', () => {
+  setState(STATE.IDLE);
   progressBar.style.width = '0%';
-  genCanvas.classList.remove('visible');
-  genCanvas.style.filter = 'none'; // Reset blur
+  resultCanvas.classList.remove('visible');
   promptInput.value = '';
   charCount.textContent = '0 / 400';
   generateBtn.disabled = true;
+  gmCorpus.textContent = '—';
+  gmRejected.textContent = '—';
+  gmDims.textContent = '—';
+  gmEpoch.textContent = '—';
+  forensicBar.classList.remove('visible');
+  splitWrap.classList.remove('split-revealed');
+  connLines.forEach(l => l.classList.remove('visible'));
+  if (sourceOverlay) sourceOverlay.classList.remove('hidden');
   showPhase('intro');
 });
 
