@@ -420,140 +420,39 @@ function finishPrinting() {
 
 // ── Drucken ──────────────────────────────────────────────────
 async function sendToPrinter() {
-  // Erstelle Druck-Ansicht
-  const printWindow = window.open('', '_blank');
-  
-  if (!printWindow) {
-    printStatus.textContent = 'Pop-up blocked — enable pop-ups to print';
-    return;
+  printStatus.textContent = 'Sending to printer…';
+
+  try {
+    const imgResponse = await fetch(selectedPair.generated);
+    if (!imgResponse.ok) throw new Error('Could not load image file');
+    const imageBlob = await imgResponse.blob();
+
+    const formData = new FormData();
+    formData.append('image', imageBlob, 'visual.png');
+    formData.append('prompt', userPrompt);
+    formData.append('sourceAuthor', selectedPair.author);
+    formData.append('sourceId', selectedPair.id);
+    formData.append('matchPercent', comparisonPct.textContent.replace('%', ''));
+    formData.append('userGenerated', 'ANONYMOUS');
+
+    const printResponse = await fetch('/api/print', {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await printResponse.json();
+
+    if (result.success) {
+      printStatus.textContent = result.printerAvailable
+        ? 'Printed successfully.'
+        : 'Print simulated (no printer connected).';
+    } else {
+      printStatus.textContent = 'Print error: ' + result.error;
+    }
+  } catch (err) {
+    console.error('Print error:', err);
+    printStatus.textContent = 'Failed to send to printer.';
   }
-
-  // Erstelle HTML für Druckausgabe
-  const imageData = selectedPair.generated;
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Submit Early - Print</title>
-  <style>
-    @page { margin: 0; size: auto; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Courier New', monospace;
-      padding: 20px;
-      max-width: 80mm;
-      margin: 0 auto;
-    }
-    .header {
-      text-align: center;
-      border-bottom: 2px dashed #000;
-      padding-bottom: 10px;
-      margin-bottom: 15px;
-    }
-    .header h1 {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-    .header p {
-      font-size: 10px;
-      color: #666;
-    }
-    .image-container {
-      text-align: center;
-      margin: 20px 0;
-    }
-    .image-container img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 0 auto;
-    }
-    .info {
-      font-size: 11px;
-      line-height: 1.6;
-      margin: 15px 0;
-    }
-    .info strong {
-      display: inline-block;
-      width: 120px;
-    }
-    .verdict {
-      background: #000;
-      color: #fff;
-      padding: 15px;
-      text-align: center;
-      font-size: 14px;
-      font-weight: bold;
-      margin: 20px 0;
-      letter-spacing: 0.05em;
-    }
-    .source {
-      border-top: 2px dashed #000;
-      padding-top: 15px;
-      margin-top: 15px;
-      font-size: 10px;
-    }
-    .footer {
-      border-top: 1px solid #000;
-      padding-top: 10px;
-      margin-top: 20px;
-      font-size: 9px;
-      text-align: center;
-      color: #666;
-    }
-    @media print {
-      body { padding: 10px; }
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>SUBMIT EARLY</h1>
-    <p>${new Date().toLocaleString('de-DE')}</p>
-  </div>
-
-  <div class="image-container">
-    <img src="${imageData}" alt="Generated Visual">
-  </div>
-
-  <div class="info">
-    <div><strong>Prompt:</strong> ${userPrompt}</div>
-    <div><strong>Model:</strong> Angewandte–Gen v0.3</div>
-    <div><strong>Match:</strong> ${comparisonPct.textContent}</div>
-  </div>
-
-  <div class="verdict">
-    YOUR VISUAL WAS NOT YOURS
-  </div>
-
-  <div class="source">
-    <div><strong>Source:</strong> ${selectedPair.author}</div>
-    <div><strong>ID:</strong> ${selectedPair.id}</div>
-    <div><strong>Status:</strong> Rejected submission</div>
-  </div>
-
-  <div class="footer">
-    This output was generated using rejected student<br>
-    submissions. Their work trained the model.
-  </div>
-
-  <script>
-    window.onload = function() {
-      setTimeout(function() {
-        window.print();
-      }, 500);
-    };
-  </script>
-</body>
-</html>
-  `;
-
-  printWindow.document.write(html);
-  printWindow.document.close();
-  
-  printStatus.textContent = 'Print dialog opened...';
 }
 
 // ── Restart ───────────────────────────────────────────────────

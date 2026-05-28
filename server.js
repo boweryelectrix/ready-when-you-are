@@ -182,31 +182,24 @@ async function printReceipt(data) {
           .text('');
 
         // Bild drucken (wenn vorhanden)
-        if (data.imageData) {
+        if (data.imageBuffer) {
           try {
-            // Base64 -> Buffer -> Canvas resizen -> temp PNG speichern
-            const img = await loadImage(data.imageData);
-            
-            const maxWidth = 384;
-            const ratio = maxWidth / img.width;
-            const printWidth = maxWidth;
-            const printHeight = Math.floor(img.height * ratio);
+            // Resize to 384px (thermal printer canvas width), output as PNG
+            const pngBuffer = await sharp(data.imageBuffer)
+              .resize({ width: 384, withoutEnlargement: false })
+              .png()
+              .toBuffer();
 
-            const canvas = createCanvas(printWidth, printHeight);
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, printWidth, printHeight);
-
-            const pngBuffer = canvas.toBuffer('image/png');
             const pixels = await new Promise((imgResolve, imgReject) => {
-              getPixels(pngBuffer, 'image/png', (err, pixels) => {
+              getPixels(pngBuffer, 'image/png', (err, px) => {
                 if (err) return imgReject(err);
-                imgResolve(pixels);
+                imgResolve(px);
               });
             });
 
             const escposImage = new escpos.Image(pixels);
             printer.align('ct').image(escposImage, 'd24');
-            
+
           } catch (imgErr) {
             console.error('Bild-Druck Fehler:', imgErr);
             printer.text('[IMAGE ERROR]');
