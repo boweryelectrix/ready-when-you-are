@@ -15,6 +15,16 @@
   --ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
 }
 
+body.dark {
+  --bg: #0d0d0d;
+  --surface: #1a1a1a;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --text-muted: #666666;
+  --text-dim: #333333;
+  --accent: #f0f0f0;
+}
+
 html, body {
   width: 100%; height: 100%;
   background: var(--bg);
@@ -79,6 +89,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  perspective: 700px;
 }
 
 .tagline {
@@ -94,11 +105,11 @@ html, body {
 .tagline::after {
   content: '|';
   display: inline-block;
-  opacity: 1;
   animation: blink 0.9s step-end infinite;
   margin-left: 2px;
   font-weight: 100;
 }
+
 
 .prompt-area {
   width: 100%;
@@ -210,19 +221,20 @@ html, body {
 /* ─── PHASE 1 – GENERATING ──────────────────────────────────── */
 #phase-generating {
   gap: 0;
-  justify-content: flex-start;
-  padding-top: 48px;
+  justify-content: center;
+  padding: 0;
   overflow: hidden;
 }
 
 .gen-topbar {
-  width: 100%;
-  max-width: 700px;
+  position: absolute;
+  top: 0; left: 0; right: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding-bottom: 28px;
-  flex-shrink: 0;
+  padding: 32px 40px 40px;
+  z-index: 2;
+  background: linear-gradient(to bottom, rgba(255,255,255,1) 65%, transparent);
 }
 
 .gen-eyebrow {
@@ -255,40 +267,42 @@ html, body {
   transition: opacity 0.3s;
 }
 
-/* Data grid animation */
+/* Blur preview wrapper – centers image like result phase */
 .data-grid-wrap {
-  position: relative;
-  width: 100%;
-  max-width: 700px;
-  flex: 1;
-  overflow: hidden;
-}
-
-.data-canvas {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
+  position: relative;
+  overflow: visible;
+  z-index: 0;
 }
 
-.data-grid-fade {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 80px;
-  background: linear-gradient(to bottom, transparent, var(--bg));
-  pointer-events: none;
+.gen-preview {
+  max-width: min(480px, 80vw);
+  max-height: min(70vh, 600px);
+  width: auto;
+  height: auto;
+  display: block;
+  border: 1px solid var(--border);
+  object-fit: contain;
+  filter: blur(30px) saturate(0);
+  transition: filter 0.9s ease;
 }
+
+.data-grid-fade { display: none; }
 
 /* Counters row */
 .gen-counters {
-  width: 100%;
-  max-width: 700px;
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  padding-top: 16px;
-  padding-bottom: 8px;
+  padding: 40px 40px 28px;
+  z-index: 2;
+  background: linear-gradient(to top, rgba(255,255,255,1) 65%, transparent);
 }
 
 .gctr {
@@ -737,3 +751,57 @@ html, body {
 
 /* ─── Shared gen canvas (legacy ref) ────────────────────────── */
 #gen-canvas { display: none; }
+
+/* ─── Theme toggle switch ───────────────────────────────────── */
+.theme-toggle {
+  position: fixed;
+  top: 32px; right: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 100;
+}
+
+.theme-toggle-track {
+  display: block;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+body.dark .theme-toggle-track {
+  background: #444;
+  border-color: #555;
+}
+
+.theme-toggle-thumb {
+  display: block;
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.3s var(--ease), background 0.3s;
+}
+
+body.dark .theme-toggle-thumb {
+  transform: translateX(16px);
+  background: #f0f0f0;
+}
+
+/* Dark mode: invert gradients in generating phase */
+body.dark .gen-topbar {
+  background: linear-gradient(to bottom, rgba(13,13,13,1) 65%, transparent);
+}
+
+body.dark .gen-counters {
+  background: linear-gradient(to top, rgba(13,13,13,1) 65%, transparent);
+}
+
+/* Dark mode: forensic overlay */
+body.dark .source-overlay { background: #0d0d0d; }

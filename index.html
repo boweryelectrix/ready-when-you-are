@@ -8,6 +8,13 @@
 </head>
 <body>
 
+  <!-- Persistent theme toggle -->
+  <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+    <span class="theme-toggle-track">
+      <span class="theme-toggle-thumb"></span>
+    </span>
+  </button>
+
   <!-- PHASE 0: INTRO -->
   <div id="phase-intro" class="phase active">
     <div class="intro-header">
@@ -20,7 +27,7 @@
     <div class="prompt-area">
       <div class="prompt-wrapper">
         <label class="prompt-label" for="user-prompt">Enter your prompt</label>
-        <textarea id="user-prompt" class="prompt-input" rows="3" placeholder="Describe what you want to create…" maxlength="400" spellcheck="false"></textarea>
+        <textarea id="user-prompt" class="prompt-input" rows="3" placeholder="Make your own visual" maxlength="400" spellcheck="false"></textarea>
         <div class="prompt-footer">
           <span id="char-count" class="char-count">0 / 400</span>
           <button id="generate-btn" class="btn-primary" disabled>Generate</button>
@@ -40,27 +47,14 @@
       <p id="gen-detail" class="gen-detail">Initialising model…</p>
     </div>
     <div class="data-grid-wrap">
-      <canvas id="data-canvas" class="data-canvas"></canvas>
+      <img id="gen-preview" class="gen-preview" src="" alt="" />
       <div class="data-grid-fade"></div>
     </div>
-    <div class="gen-counters">
-      <div class="gctr">
-        <span class="gctr-key">Corpus</span>
-        <span class="gctr-val" id="gm-corpus">—</span>
-      </div>
-      <div class="gctr">
-        <span class="gctr-key">Rejected samples scanned</span>
-        <span class="gctr-val" id="gm-rejected">—</span>
-      </div>
-      <div class="gctr">
-        <span class="gctr-key">Latent dimensions</span>
-        <span class="gctr-val" id="gm-dims">—</span>
-      </div>
-      <div class="gctr">
-        <span class="gctr-key">Epoch</span>
-        <span class="gctr-val" id="gm-epoch">—</span>
-      </div>
-    </div>
+    <!-- counters removed -->
+    <span id="gm-corpus" hidden></span>
+    <span id="gm-rejected" hidden></span>
+    <span id="gm-dims" hidden></span>
+    <span id="gm-epoch" hidden></span>
   </div>
 
   <!-- PHASE 2: RESULT -->
