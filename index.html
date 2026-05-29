@@ -8,6 +8,13 @@
 </head>
 <body>
 
+  <!-- Persistent theme toggle -->
+  <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+    <span class="theme-toggle-track">
+      <span class="theme-toggle-thumb"></span>
+    </span>
+  </button>
+
   <!-- PHASE 0: INTRO -->
   <div id="phase-intro" class="phase active">
     <div class="intro-header">
@@ -20,7 +27,7 @@
     <div class="prompt-area">
       <div class="prompt-wrapper">
         <label class="prompt-label" for="user-prompt">Enter your prompt</label>
-        <textarea id="user-prompt" class="prompt-input" rows="3" placeholder="Describe what you want to create…" maxlength="400" spellcheck="false"></textarea>
+        <textarea id="user-prompt" class="prompt-input" rows="3" placeholder="Make your own visual" maxlength="400" spellcheck="false"></textarea>
         <div class="prompt-footer">
           <span id="char-count" class="char-count">0 / 400</span>
           <button id="generate-btn" class="btn-primary" disabled>Generate</button>
@@ -40,27 +47,14 @@
       <p id="gen-detail" class="gen-detail">Initialising model…</p>
     </div>
     <div class="data-grid-wrap">
-      <canvas id="data-canvas" class="data-canvas"></canvas>
+      <img id="gen-preview" class="gen-preview" src="" alt="" />
       <div class="data-grid-fade"></div>
     </div>
-    <div class="gen-counters">
-      <div class="gctr">
-        <span class="gctr-key">Corpus</span>
-        <span class="gctr-val" id="gm-corpus">—</span>
-      </div>
-      <div class="gctr">
-        <span class="gctr-key">Rejected samples scanned</span>
-        <span class="gctr-val" id="gm-rejected">—</span>
-      </div>
-      <div class="gctr">
-        <span class="gctr-key">Latent dimensions</span>
-        <span class="gctr-val" id="gm-dims">—</span>
-      </div>
-      <div class="gctr">
-        <span class="gctr-key">Epoch</span>
-        <span class="gctr-val" id="gm-epoch">—</span>
-      </div>
-    </div>
+    <!-- counters removed -->
+    <span id="gm-corpus" hidden></span>
+    <span id="gm-rejected" hidden></span>
+    <span id="gm-dims" hidden></span>
+    <span id="gm-epoch" hidden></span>
   </div>
 
   <!-- PHASE 2: RESULT -->
@@ -79,77 +73,52 @@
   <!-- PHASE 3: PRINT & FORENSIC REVEAL -->
   <div id="phase-printing" class="phase">
 
-    <!-- Forensic top bar – slides down when match is found -->
+    <!-- Forensic top bar -->
     <div class="forensic-bar" id="forensic-bar">
-      <span class="forensic-bar-label">MATCH FOUND</span>
       <span class="forensic-bar-pct" id="comparison-pct">—</span>
-      <span class="forensic-bar-label">SIMILARITY</span>
+      <span class="forensic-bar-label">match</span>
     </div>
 
     <!-- Split container -->
     <div id="split-wrap" class="split-wrap">
 
-      <!-- Left: your generated output -->
+      <!-- Left: generated output -->
       <div class="split-side split-side--your" id="split-your">
-        <p class="split-label">YOUR OUTPUT</p>
         <div class="split-imgbox">
           <canvas id="analysis-output" class="split-canvas"></canvas>
         </div>
         <p class="split-caption" id="analysis-output-meta">—</p>
       </div>
 
-      <!-- Center divider with connection lines -->
-      <div class="split-divider" id="split-divider">
-        <svg id="connection-lines" class="connection-svg" viewBox="0 0 40 300" preserveAspectRatio="none">
-          <line class="conn-line" x1="0" y1="60"  x2="40" y2="60"  stroke-dasharray="4 3"/>
-          <line class="conn-line" x1="0" y1="130" x2="40" y2="130" stroke-dasharray="4 3"/>
-          <line class="conn-line" x1="0" y1="195" x2="40" y2="195" stroke-dasharray="4 3"/>
-          <line class="conn-line" x1="0" y1="248" x2="40" y2="248" stroke-dasharray="4 3"/>
-        </svg>
-        <span class="divider-label" id="comparison-verdict">Analysing…</span>
-      </div>
-
-      <!-- Right: source work (forensic) -->
+      <!-- Right: source work -->
       <div class="split-side split-side--source" id="split-source">
-        <p class="split-label split-label--forensic">SOURCE WORK · RESTRICTED</p>
         <div class="split-imgbox">
           <div id="analysis-source" class="split-source-img">
-            <!-- Overlay shown before image is revealed -->
             <div class="source-overlay" id="source-overlay">
-              <div class="source-overlay-scanline"></div>
-              <p class="source-overlay-text">RETRIEVING ARCHIVE…</p>
-              <p class="source-overlay-id" id="source-overlay-id">ID —</p>
+              <p class="source-overlay-id" id="source-overlay-id">—</p>
             </div>
           </div>
         </div>
         <div class="split-source-meta">
           <div class="smeta-row">
-            <span class="smeta-key">Original Author</span>
+            <span class="smeta-key">Author</span>
             <span class="smeta-val" id="source-author">—</span>
           </div>
           <div class="smeta-row">
-            <span class="smeta-key">Status</span>
-            <span class="smeta-val smeta-red" id="source-meta">Rejected by Jury</span>
-          </div>
-          <div class="smeta-row">
             <span class="smeta-key">Reason</span>
-            <span class="smeta-val" id="source-reason">Not suitable for brand identity</span>
-          </div>
-          <div class="smeta-row cmetrics">
-            <span class="smeta-key">Analysis</span>
-            <span class="smeta-val">
-              <span class="cmetric-pill"><span class="cmetric-name">Composition</span><span id="cbar-1">—</span></span>
-              <span class="cmetric-pill"><span class="cmetric-name">Colour</span><span id="cbar-2">—</span></span>
-              <span class="cmetric-pill"><span class="cmetric-name">Form</span><span id="cbar-3">—</span></span>
-              <span class="cmetric-pill"><span class="cmetric-name">Type</span><span id="cbar-4">—</span></span>
-            </span>
+            <span class="smeta-val" id="source-reason">—</span>
           </div>
         </div>
       </div>
 
     </div>
 
-    <p id="print-status" class="print-status">Sending to printer…</p>
+    <!-- hidden refs kept for JS -->
+    <span id="comparison-verdict" hidden></span>
+    <span id="source-meta" hidden></span>
+    <span id="cbar-1" hidden></span><span id="cbar-2" hidden></span>
+    <span id="cbar-3" hidden></span><span id="cbar-4" hidden></span>
+    <p id="print-status" class="print-status">—</p>
   </div>
 
   <!-- PHASE 4: REVEAL -->

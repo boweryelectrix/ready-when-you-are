@@ -10,7 +10,16 @@ let appState = STATE.IDLE;
 function setState(s) { appState = s; }
 
 // ── Tagline ───────────────────────────────────────────────────
-const TAGLINES = ["Ready when you are."];
+const TAGLINES = [
+  "Ready when you are.",
+  "What will you create today?",
+  "Describe your vision.",
+  "Turn words into visuals.",
+  "Your imagination, rendered.",
+  "Create anything, instantly.",
+  "Bring your idea to life.",
+  "The canvas is yours.",
+];
 
 // ── DOM refs ──────────────────────────────────────────────────
 const phases = {
@@ -27,7 +36,7 @@ const charCount      = document.getElementById('char-count');
 const generateBtn    = document.getElementById('generate-btn');
 const progressBar    = document.getElementById('progress-bar');
 const genDetail      = document.getElementById('gen-detail');
-const dataCanvas     = document.getElementById('data-canvas');
+const genPreview     = document.getElementById('gen-preview');
 const resultCanvas   = document.getElementById('result-canvas');
 const printBtn       = document.getElementById('print-btn');
 const printStatus    = document.getElementById('print-status');
@@ -99,7 +108,7 @@ const VISUAL_PAIRS = [
 
 let selectedPair  = null;
 let userPrompt    = '';
-let dataGridInterval = null;
+let dataGridInterval = null; // kept for legacy stopDataGridAnimation no-op
 // pairIndex überlebt Seiten-Reloads via localStorage
 // Startet bei 2 damit sofort Pair 3 & 4 dran kommen
 let pairIndex = parseInt(localStorage.getItem('pairIndex') || '2');
@@ -123,7 +132,21 @@ function typeText(el, text, speed, cb) {
   tick();
 }
 
-function cycleTagline() { typeText(taglineEl, TAGLINES[0], 40); }
+// ── Tagline cycling ───────────────────────────────────────────
+let taglineIdx = 0;
+
+function cycleTagline() {
+  typeText(taglineEl, TAGLINES[taglineIdx], 40, scheduleNextTagline);
+}
+
+function scheduleNextTagline() {
+  setTimeout(flipToNextTagline, 2600);
+}
+
+function flipToNextTagline() {
+  taglineIdx = (taglineIdx + 1) % TAGLINES.length;
+  typeText(taglineEl, TAGLINES[taglineIdx], 38, scheduleNextTagline);
+}
 
 // ── Prompt input ──────────────────────────────────────────────
 promptInput.addEventListener('input', () => {
@@ -138,79 +161,32 @@ generateBtn.addEventListener('click', startGenerating);
 
 function startGenerating() {
   setState(STATE.GENERATING);
+
+  // Select pair early so blur preview can start immediately
+  selectedPair = VISUAL_PAIRS[pairIndex % VISUAL_PAIRS.length];
+  pairIndex++;
+  localStorage.setItem('pairIndex', pairIndex);
+
   showPhase('generating');
-  runDataGridAnimation();
+  runBlurPreview();
   runGeneratingCounters();
   runGeneratingPhase();
 }
 
-// ── Data grid animation ───────────────────────────────────────
-const DATA_CHARS = '0123456789ABCDEF·░▒█╌─┄'.split('');
+// ── Blur preview during generation ───────────────────────────
+function runBlurPreview() {
+  genPreview.src = selectedPair.generated;
+  genPreview.style.filter = 'blur(30px) saturate(0)';
 
-function runDataGridAnimation() {
-  const canvas = dataCanvas;
-  const parent = canvas.parentElement;
-  canvas.width  = parent.offsetWidth  || 700;
-  canvas.height = parent.offsetHeight || 300;
-
-  const ctx = canvas.getContext('2d');
-  const cellW = 28;
-  const cellH = 18;
-  const cols = Math.floor(canvas.width  / cellW);
-  const rows = Math.floor(canvas.height / cellH);
-
-  // Each cell: { char, locked, lockProgress (0–1), age }
-  const grid = Array.from({ length: rows }, () =>
-    Array.from({ length: cols }, () => ({
-      char: DATA_CHARS[Math.floor(Math.random() * DATA_CHARS.length)],
-      locked: false,
-      lockProgress: 0,
-    }))
-  );
-
-  let globalProgress = 0; // 0–1 mirroring generation progress
-
-  const draw = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.font = '10px Menlo, Courier New, monospace';
-
-    const lockThreshold = globalProgress;
-
-    grid.forEach((row, ri) => {
-      row.forEach((cell, ci) => {
-        // Randomise unlocked cells
-        if (!cell.locked && Math.random() > 0.65) {
-          cell.char = DATA_CHARS[Math.floor(Math.random() * DATA_CHARS.length)];
-        }
-
-        // Lock cells from top-left as progress grows
-        const cellPos = (ri * cols + ci) / (rows * cols);
-        if (!cell.locked && cellPos < lockThreshold) {
-          cell.locked = true;
-          cell.char = DATA_CHARS[Math.floor(Math.random() * DATA_CHARS.length)];
-        }
-
-        // Opacity: locked cells brighter
-        const alpha = cell.locked ? 0.65 : 0.12 + Math.random() * 0.1;
-        ctx.fillStyle = cell.locked
-          ? `rgba(17,17,17,${alpha})`
-          : `rgba(17,17,17,${alpha})`;
-
-        ctx.fillText(cell.char, ci * cellW + 4, ri * cellH + 13);
-      });
-    });
+  genPreview._setProgress = (p) => {
+    const blur = (30 * (1 - p)).toFixed(1);
+    const sat  = p.toFixed(2);
+    genPreview.style.filter = `blur(${blur}px) saturate(${sat})`;
   };
-
-  // Expose progress setter so generating phase can update it
-  dataCanvas._setProgress = (p) => { globalProgress = p; };
-
-  clearInterval(dataGridInterval);
-  dataGridInterval = setInterval(draw, 60);
 }
 
 function stopDataGridAnimation() {
-  clearInterval(dataGridInterval);
-  dataGridInterval = null;
+  // no-op — blur preview uses CSS transitions
 }
 
 // ── Generating counters ───────────────────────────────────────
@@ -254,10 +230,7 @@ const GEN_STEPS = [
 ];
 
 function runGeneratingPhase() {
-  selectedPair = VISUAL_PAIRS[pairIndex % VISUAL_PAIRS.length];
-  pairIndex++;
-  localStorage.setItem('pairIndex', pairIndex);
-
+  // selectedPair already set in startGenerating()
   let stepIdx = 0;
 
   const advance = () => {
@@ -269,8 +242,8 @@ function runGeneratingPhase() {
     progressBar.style.width = pct + '%';
     genDetail.textContent   = label;
 
-    if (dataCanvas._setProgress) {
-      dataCanvas._setProgress(pct / 100);
+    if (genPreview._setProgress) {
+      genPreview._setProgress(pct / 100);
     }
 
     setTimeout(advance, pct < 30 ? 700 : pct < 75 ? 950 : 450);
@@ -517,11 +490,22 @@ restartBtn.addEventListener('click', () => {
   gmRejected.textContent = '—';
   gmDims.textContent = '—';
   gmEpoch.textContent = '—';
+  genPreview.src = '';
+  genPreview.style.filter = 'blur(30px) saturate(0)';
   forensicBar.classList.remove('visible');
   splitWrap.classList.remove('split-revealed');
   connLines.forEach(l => l.classList.remove('visible'));
   if (sourceOverlay) sourceOverlay.classList.remove('hidden');
   showPhase('intro');
+});
+
+// ── Theme toggle ──────────────────────────────────────────────
+const themeToggle = document.getElementById('theme-toggle');
+if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+
+themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
 });
 
 // ── Init ──────────────────────────────────────────────────────
