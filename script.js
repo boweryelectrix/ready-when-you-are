@@ -539,7 +539,7 @@ phases.carousel.addEventListener('click', launchIntro);
 // Type the carousel label — loops forever
 const carouselLabel = document.querySelector('.carousel-label');
 function loopCarouselLabel() {
-  typeText(carouselLabel, 'print ur own visual', 55, () => {
+  typeText(carouselLabel, 'Print your own visual', 55, () => {
     setTimeout(loopCarouselLabel, 1800);
   });
 }
