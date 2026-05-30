@@ -1,5 +1,7 @@
 # Submit Early - Installation
 
+![Bild](./Screenshot%202026-05-30%20at%2007.31.20.png)
+
 Eine interaktive Installation über KI-generierte Kunst und deren ethische Implikationen.
 
 ## Features

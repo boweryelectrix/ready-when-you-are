@@ -14,7 +14,9 @@
       "Bash(lsof -ti:3000)",
       "Bash(xargs kill -9)",
       "Read(//private/tmp/**)",
-      "Bash(open /Users/jana/Desktop/angewandte/S26/workshop/index.html)"
+      "Bash(open /Users/jana/Desktop/angewandte/S26/workshop/index.html)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
