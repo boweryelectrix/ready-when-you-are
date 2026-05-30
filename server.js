@@ -217,10 +217,13 @@ async function printReceipt(data) {
         // Bild drucken (wenn vorhanden)
         if (data.imageBuffer) {
           try {
-            // Resize to 384px (thermal printer canvas width), output as PNG
+            // Resize to 384px, convert to 1-bit bitmap with Floyd-Steinberg dithering
+            // for optimal thermal printer output (high contrast, no grey blobs)
             const pngBuffer = await sharp(data.imageBuffer)
               .resize({ width: 384, withoutEnlargement: false })
-              .png()
+              .greyscale()
+              .normalise()
+              .png({ palette: true, colours: 2, dither: 1 })
               .toBuffer();
 
             const pixels = await new Promise((imgResolve, imgReject) => {
