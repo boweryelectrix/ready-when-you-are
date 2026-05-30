@@ -358,7 +358,7 @@ function startPrinting() {
   comparisonVerdict.textContent = 'Analysing…';
   comparisonVerdict.classList.remove('alert');
   connLines.forEach(l => l.classList.remove('visible'));
-  printStatus.textContent = 'Printing — analysing output in real time…';
+  printStatus.textContent = '';
   cbar1.textContent = '—';
   cbar2.textContent = '—';
   cbar3.textContent = '—';
@@ -415,7 +415,7 @@ function runForensicSequence() {
   setTimeout(() => {
     comparisonVerdict.classList.add('alert');
     comparisonVerdict.textContent = '1:1 COPY OF SOURCE WORK';
-    printStatus.textContent = 'Output flagged. Sending to thermal printer…';
+    printStatus.textContent = '';
   }, 17000);
 
   // Send to printer — trigger early so print starts in background
@@ -461,7 +461,7 @@ function finishPrinting() {
 
 // ── Thermal printer request ───────────────────────────────────
 async function sendToPrinter() {
-  printStatus.textContent = '▶ Sending to printer…';
+  printStatus.textContent = '';
 
   try {
     const imgResponse = await fetch(selectedPair.generated);
@@ -482,7 +482,7 @@ async function sendToPrinter() {
     if (result.success) {
       printStatus.textContent = result.printerAvailable
         ? '✓ Printed.'
-        : '✓ Print simulated (no printer connected).';
+        : '✓ Print simulated';
     } else {
       printStatus.textContent = 'Print error: ' + result.error;
       console.error('Print error from server:', result.error);

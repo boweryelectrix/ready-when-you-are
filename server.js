@@ -22,21 +22,27 @@ const PRINTER_PID = 0x0202;
 // Versuche Drucker-Module zu laden
 let printerAvailable = false;
 try {
+  // Patch: usb.on('detach') fehlt in neueren usb/Node-Versionen
+  // Muss VOR escpos-usb gepatcht werden
+  try {
+    const usbModule = require('usb');
+    if (typeof usbModule.on !== 'function') {
+      usbModule.on = function() {};
+    }
+  } catch (_) {
+    // usb native module not available – patch globalThis so escpos-usb doesn't crash
+    // escpos-usb uses usb internally, we try to let it handle its own fallback
+  }
+
   escpos = require('escpos');
   USB = require('escpos-usb');
   escpos.USB = USB;
-
-  // Patch: usb.on('detach') ist in usb v2.x + Node v26 nicht verfügbar
-  // Wir patchen das usb-Modul damit escpos-usb nicht crasht
-  const usbModule = require('usb');
-  if (typeof usbModule.on !== 'function') {
-    usbModule.on = function() {}; // no-op stub
-  }
 
   printerAvailable = true;
   console.log('✓ Thermodrucker-Module geladen');
 } catch (err) {
   console.log('⚠ Thermodrucker-Module nicht verfügbar (nur Simulation)');
+  console.log('  Fehler:', err.message);
   console.log('  Zum Installieren: npm install escpos escpos-usb usb');
 }
 
@@ -81,11 +87,22 @@ app.post('/api/print', upload.single('image'), async (req, res) => {
 
   try {
     // Drucker initialisieren
+    let canPrint = false;
     if (printerAvailable) {
-      await initPrinter();
+      try {
+        await initPrinter();
+        canPrint = true;
+      } catch (initErr) {
+        console.log('⚠ Drucker nicht erreichbar, falle auf Simulation zurück:', initErr.message);
+        canPrint = false;
+      }
     }
 
-    // Drucke den Beleg
+    // Temporär auf Simulation setzen falls Drucker-Init fehlschlug
+    const origAvailable = printerAvailable;
+    if (!canPrint) printerAvailable = false;
+
+    // Drucke den Beleg (Simulation oder echt)
     await printReceipt({
       imageBuffer,
       prompt: prompt || 'No prompt provided',
@@ -95,10 +112,12 @@ app.post('/api/print', upload.single('image'), async (req, res) => {
       userGenerated: userGenerated || 'ANONYMOUS'
     });
 
+    printerAvailable = origAvailable;
+
     res.json({ 
       success: true, 
       message: 'Druck erfolgreich',
-      printerAvailable 
+      printerAvailable: canPrint 
     });
 
   } catch (error) {
@@ -106,7 +125,7 @@ app.post('/api/print', upload.single('image'), async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: error.message,
-      printerAvailable 
+      printerAvailable: false 
     });
   }
 });
@@ -159,7 +178,10 @@ async function printReceipt(data) {
     console.log(`ID: ${data.sourceId}`);
     console.log('\n═══════════════════════════════════════');
     console.log('   YOUR VISUAL WAS NOT YOURS.');
-    console.log('═══════════════════════════════════════\n');
+    console.log('═══════════════════════════════════════');
+    console.log('This work was generated from');
+    console.log('the complete dataset of the');
+    console.log('Narrative Media and Design class.\n');
     return;
   }
 
@@ -244,11 +266,10 @@ async function printReceipt(data) {
           .style('normal')
           .size(0, 0)
           .text('This work was generated from')
-          .text('rejected submissions.')
+          .text('the complete dataset of the')
+          .text('Narrative Media and Design class.')
           .text('')
           .drawLine()
-          .text('')
-          .text('angewandte.at/submit-early')
           .text('')
           .cut()
           .close(() => {
