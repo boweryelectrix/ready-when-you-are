@@ -100,6 +100,16 @@
   <!-- PHASE 3: PRINT & FORENSIC REVEAL -->
   <div id="phase-printing" class="phase">
 
+    <!-- Reveal text top -->
+    <div class="forensic-reveal-text forensic-reveal-top" id="forensic-reveal-top">
+      <p class="reveal-eyebrow">SYSTEM NOTICE</p>
+      <h2 class="reveal-headline-sm">Your visual was not yours.</h2>
+      <p class="reveal-body-sm">
+        Generated from the complete dataset of the <span class="highlight">Narrative Media and Design class</span>.
+        Their work trained the model. Your prompt directed it.
+      </p>
+    </div>
+
     <!-- Forensic top bar -->
     <div class="forensic-bar" id="forensic-bar">
       <span class="forensic-bar-pct" id="comparison-pct">—</span>
@@ -145,29 +155,20 @@
     <span id="source-meta" hidden></span>
     <span id="cbar-1" hidden></span><span id="cbar-2" hidden></span>
     <span id="cbar-3" hidden></span><span id="cbar-4" hidden></span>
+
+    <!-- Reveal text bottom -->
+    <div class="forensic-reveal-text forensic-reveal-bottom" id="forensic-reveal-bottom">
+      <p class="reveal-body-sm">
+        <span class="highlight">97%</span> similarity detected &middot;
+        Matched source: <span class="highlight">NIKI HERMKES</span> &middot;
+        Status: <span class="highlight">Rejected / Stored / Reused / Logged</span>
+      </p>
+      <button id="restart-btn" class="btn-ghost" style="margin-top:16px;">Start again</button>
+    </div>
     <p id="print-status" class="print-status">—</p>
   </div>
 
-  <!-- PHASE 4: REVEAL -->
-  <div id="phase-reveal" class="phase">
-    <div class="reveal-content">
-      <p class="reveal-eyebrow">SYSTEM NOTICE</p>
-      <h1 class="reveal-headline">Your visual was not yours.</h1>
-      <p class="reveal-body">
-        Generated from the complete dataset of the <span class="highlight">Narrative Media and Design class</span>.
-        Their work trained the model.
-        Your prompt directed it.
-      </p>
-      <p class="reveal-body">
-        <span id="flag-percent" class="highlight">97%</span> similarity detected<br>
-        Matched source: <span id="reveal-author" class="highlight">NIKI HERMKES</span><br>
-        Status: <span class="highlight">Rejected / Stored / Reused / Logged</span>
-      </p>
-      <span id="rejected-count" hidden>—</span>
-      <div class="reveal-divider"></div>
-      <button id="restart-btn" class="btn-ghost">Start again</button>
-    </div>
-  </div>
+
 
   <script src="script.js"></script>
 </body>

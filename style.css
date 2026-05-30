@@ -782,6 +782,57 @@ html, body {
 }
 
 
+/* Forensic reveal text overlays */
+.forensic-reveal-text {
+  position: absolute;
+  left: 0; right: 0;
+  text-align: center;
+  padding: 16px 32px;
+  z-index: 12;
+  opacity: 0;
+  transition: opacity 1s ease;
+  pointer-events: none;
+}
+
+.forensic-reveal-text.visible {
+  opacity: 1;
+}
+
+.forensic-reveal-top {
+  top: 0;
+  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+}
+
+.forensic-reveal-bottom {
+  bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.forensic-reveal-bottom.visible {
+  pointer-events: auto;
+}
+
+.reveal-headline-sm {
+  font-size: clamp(18px, 3vw, 28px);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.reveal-body-sm {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
 /* Print status */
 .print-status {
   position: absolute;

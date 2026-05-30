@@ -28,7 +28,6 @@ const phases = {
   generating: document.getElementById('phase-generating'),
   result:     document.getElementById('phase-result'),
   printing:   document.getElementById('phase-printing'),
-  reveal:     document.getElementById('phase-reveal'),
 };
 
 const taglineEl      = document.getElementById('tagline');
@@ -434,6 +433,12 @@ function triggerSplitReveal() {
   // Trigger CSS split animation (left shrinks to 50%, right grows to 50%)
   splitWrap.classList.add('split-revealed');
 
+  // Show reveal text top & bottom
+  const revTop = document.getElementById('forensic-reveal-top');
+  const revBot = document.getElementById('forensic-reveal-bottom');
+  if (revTop) setTimeout(() => revTop.classList.add('visible'), 1200);
+  if (revBot) setTimeout(() => revBot.classList.add('visible'), 2000);
+
   // After panel fully slides in: hide overlay, reveal source image
   setTimeout(() => {
     if (sourceOverlay) sourceOverlay.classList.add('hidden');
@@ -449,16 +454,9 @@ function triggerSplitReveal() {
   });
 }
 
-// ── Finish and move to text reveal ───────────────────────────
+// ── Finish – no separate reveal phase, text is already on forensic screen
 function finishPrinting() {
-  const rejected = 847 + Math.floor(Math.random() * 400);
-  rejectedCount.textContent = rejected.toLocaleString();
-  flagPercent.textContent   = comparisonPct.textContent;
-  const revealAuthor = document.getElementById('reveal-author');
-  if (revealAuthor) revealAuthor.textContent = sourceAuthor.textContent;
-
-  showPhase('reveal');
-
+  // no-op: reveal text is already shown on the forensic split screen
 }
 
 // ── Thermal printer request ───────────────────────────────────
@@ -512,6 +510,10 @@ restartBtn.addEventListener('click', () => {
   forensicBar.classList.remove('visible');
   splitWrap.classList.remove('split-revealed');
   connLines.forEach(l => l.classList.remove('visible'));
+  const revTop = document.getElementById('forensic-reveal-top');
+  const revBot = document.getElementById('forensic-reveal-bottom');
+  if (revTop) revTop.classList.remove('visible');
+  if (revBot) revBot.classList.remove('visible');
   if (sourceOverlay) sourceOverlay.classList.remove('hidden');
   document.querySelector('.result-approve-wrap').classList.remove('entered');
   showPhase('intro');
