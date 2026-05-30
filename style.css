@@ -975,7 +975,7 @@ html, body {
   text-align: center;
   pointer-events: none;
   user-select: none;
-  max-width: 360px;
+  white-space: nowrap;
   line-height: 1.15;
   min-height: 1.2em;
 }
