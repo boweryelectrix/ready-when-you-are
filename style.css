@@ -1044,6 +1044,7 @@ body.dark .gen-counters {
 }
 
 /* Dark mode: forensic overlay */
+body.dark .source-overlay { background: #0d0d0d; }
 body.dark .split-side--source { background: var(--bg); }
 
 
