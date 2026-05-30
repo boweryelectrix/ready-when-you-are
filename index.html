@@ -47,13 +47,13 @@
       <div class="prompt-wrapper">
         <label class="prompt-label" for="user-prompt">Enter your prompt</label>
         <textarea id="user-prompt" class="prompt-input" rows="3" placeholder="Make your own visual" maxlength="400" spellcheck="false"></textarea>
-        <div class="prompt-footer">
-          <span id="char-count" class="char-count">0 / 400</span>
-          <button id="generate-btn" class="btn-primary" disabled>Generate</button>
-        </div>
+        <span id="char-count" class="char-count">0 / 400</span>
       </div>
-      <p class="disclaimer">By continuing you agree to our <span class="underline">Terms of Use</span> and <span class="underline">Data Policy</span>.</p>
+      <div class="prompt-footer">
+        <button id="generate-btn" class="btn-primary" disabled>Generate</button>
+      </div>
     </div>
+    <p class="disclaimer">By continuing you agree to our <span class="underline">Terms of Use</span> and <span class="underline">Data Policy</span>.</p>
   </div>
 
   <!-- PHASE 1: GENERATING -->
