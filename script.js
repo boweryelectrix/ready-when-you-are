@@ -259,6 +259,8 @@ function transitionToResult() {
   const ctx = resultCanvas.getContext('2d');
   const img = new Image();
 
+  const approveWrap = document.querySelector('.result-approve-wrap');
+
   img.onload = () => {
     const maxW = Math.min(480, window.innerWidth * 0.8);
     const scale = maxW / img.width;
@@ -267,8 +269,10 @@ function transitionToResult() {
     ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
     ctx.drawImage(img, 0, 0, resultCanvas.width, resultCanvas.height);
 
+    approveWrap.classList.remove('entered');
     showPhase('result');
     setTimeout(() => resultCanvas.classList.add('visible'), 60);
+    setTimeout(() => approveWrap.classList.add('entered'), 1100);
   };
 
   img.onerror = () => {
@@ -281,8 +285,10 @@ function transitionToResult() {
     ctx.textAlign = 'center';
     ctx.fillText('[ image not found ]', 180, 185);
     ctx.textAlign = 'left';
+    approveWrap.classList.remove('entered');
     showPhase('result');
     setTimeout(() => resultCanvas.classList.add('visible'), 60);
+    setTimeout(() => approveWrap.classList.add('entered'), 1100);
   };
 
   img.src = selectedPair.generated;
@@ -299,8 +305,7 @@ function startPrinting() {
   const img = new Image();
 
   img.onload = () => {
-    // Use more vertical space (70vh) so image is big before split
-    const maxH = Math.min(window.innerHeight * 0.70, 600);
+    const maxH = Math.min(window.innerHeight * 0.60, 520);
     const scale = maxH / img.height;
     analysisOutput.width  = img.width  * scale;
     analysisOutput.height = img.height * scale;
@@ -356,32 +361,32 @@ function startPrinting() {
 function runForensicSequence() {
   const finalPct = 91 + Math.floor(Math.random() * 7); // 91–97%
 
-  // Verdict messages
+  // Verdict messages — spread out for dramatic pacing
   const verdictSteps = [
-    [400,  'Decomposing output…'],
-    [1100, 'Extracting visual features…'],
-    [1900, 'Indexing colour, form, layout…'],
-    [2700, 'Cross-referencing training set…'],
-    [3500, 'Match candidate located.'],
-    [4100, 'Aligning pixel regions…'],
+    [800,   'Decomposing output…'],
+    [2600,  'Extracting visual features…'],
+    [4800,  'Indexing colour, form, layout…'],
+    [7200,  'Cross-referencing training set…'],
+    [10000, 'Match candidate located.'],
+    [12200, 'Aligning pixel regions…'],
   ];
   verdictSteps.forEach(([t, txt]) => {
     setTimeout(() => { comparisonVerdict.textContent = txt; }, t);
   });
 
-  // Percentage counts up → triggers reveal
+  // Percentage counts up — starts after initial analysis
   setTimeout(() => {
     let p = 0;
     const tick = () => {
-      p += 1 + Math.random() * 2.5;
+      p += 0.8 + Math.random() * 2.0;
       if (p >= finalPct) p = finalPct;
       comparisonPct.textContent = Math.floor(p) + '%';
-      if (p < finalPct) setTimeout(tick, 35);
+      if (p < finalPct) setTimeout(tick, 55);
     };
     tick();
-  }, 600);
+  }, 1800);
 
-  // Metric values
+  // Metric values — revealed slowly
   const metrics = [
     [cbar1, 90 + Math.floor(Math.random() * 8)],
     [cbar2, 87 + Math.floor(Math.random() * 10)],
@@ -389,24 +394,24 @@ function runForensicSequence() {
     [cbar4, 93 + Math.floor(Math.random() * 5)],
   ];
   metrics.forEach(([el, val], i) => {
-    setTimeout(() => { el.textContent = val + '%'; }, 1400 + i * 500);
+    setTimeout(() => { el.textContent = val + '%'; }, 4000 + i * 1000);
   });
 
-  // SPLIT REVEAL: trigger at 4.6s
-  setTimeout(triggerSplitReveal, 4600);
+  // SPLIT REVEAL: trigger at 14s — give user time to read the data
+  setTimeout(triggerSplitReveal, 14000);
 
-  // Final verdict
+  // Final verdict — appears after split has fully settled
   setTimeout(() => {
     comparisonVerdict.classList.add('alert');
     comparisonVerdict.textContent = '1:1 COPY OF SOURCE WORK';
     printStatus.textContent = 'Output flagged. Sending to thermal printer…';
-  }, 5400);
+  }, 17000);
 
-  // Send to printer – früh auslösen damit der Drucker sofort startet
+  // Send to printer — trigger early so print starts in background
   setTimeout(sendToPrinter, 800);
 
-  // Move to reveal
-  setTimeout(finishPrinting, 9000);
+  // Move to reveal — long pause so comparison is absorbed
+  setTimeout(finishPrinting, 26000);
 }
 
 // ── Split reveal animation ────────────────────────────────────
@@ -417,15 +422,14 @@ function triggerSplitReveal() {
   // Trigger CSS split animation (left shrinks to 50%, right grows to 50%)
   splitWrap.classList.add('split-revealed');
 
-  // After panel slides in: hide overlay, show source image
+  // After panel fully slides in: hide overlay, reveal source image
   setTimeout(() => {
     if (sourceOverlay) sourceOverlay.classList.add('hidden');
     const sourceImg = analysisSourceEl.querySelector('img');
     if (sourceImg) {
-      // Small delay so overlay fade-out is visible first
-      setTimeout(() => sourceImg.classList.add('revealed'), 200);
+      setTimeout(() => sourceImg.classList.add('revealed'), 500);
     }
-  }, 1100);
+  }, 2000);
 
   // Draw connection lines with stagger
   connLines.forEach((line, i) => {
@@ -496,6 +500,7 @@ restartBtn.addEventListener('click', () => {
   splitWrap.classList.remove('split-revealed');
   connLines.forEach(l => l.classList.remove('visible'));
   if (sourceOverlay) sourceOverlay.classList.remove('hidden');
+  document.querySelector('.result-approve-wrap').classList.remove('entered');
   showPhase('intro');
 });
 

@@ -224,7 +224,7 @@ html, body {
 }
 
 /* ─── PHASE 0 – INTRO ───────────────────────────────────────── */
-#phase-intro { gap: 56px; }
+#phase-intro { gap: 40px; }
 
 .intro-header {
   position: absolute;
@@ -282,21 +282,24 @@ html, body {
 
 .prompt-area {
   width: 100%;
-  max-width: 620px;
+  max-width: 660px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .prompt-wrapper {
   border: 1px solid var(--border);
-  padding: 20px 24px 16px;
+  padding: 28px 32px 22px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   background: var(--surface);
 }
 
 .prompt-label {
-  font-size: 10px;
-  letter-spacing: 0.14em;
+  font-size: 9px;
+  letter-spacing: 0.22em;
   color: var(--text-muted);
   text-transform: uppercase;
 }
@@ -307,13 +310,13 @@ html, body {
   outline: none;
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 18px;
+  line-height: 1.65;
   resize: none;
   width: 100%;
 }
 
-.prompt-input::placeholder { color: #bbb; }
+.prompt-input::placeholder { color: var(--text-dim); }
 
 .prompt-footer {
   display: flex;
@@ -327,24 +330,25 @@ html, body {
 }
 
 .disclaimer {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-dim);
-  text-align: center;
-  max-width: 480px;
+  text-align: left;
+  max-width: 660px;
+  padding-left: 2px;
 }
 
 .underline { text-decoration: underline; cursor: pointer; }
 
 /* ─── Buttons ────────────────────────────────────────────────── */
 .btn-primary {
-  background: #111111;
-  color: #ffffff;
+  background: var(--text);
+  color: var(--bg);
   border: none;
-  padding: 10px 28px;
+  padding: 12px 32px;
   font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -353,22 +357,55 @@ html, body {
 .btn-primary:disabled { opacity: 0.18; cursor: default; }
 
 .btn-approve {
-  background: #111111;
-  color: #ffffff;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--text);
+  color: var(--bg);
   border: none;
-  padding: 16px 48px;
+  padding: 26px 72px 26px 60px;
   font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.15s;
+  transition: opacity 0.2s, transform 0.2s;
+  animation: approve-breathe 2.6s ease-in-out infinite;
+}
+
+/* Printer icon inside button */
+.btn-print-icon {
+  flex-shrink: 0;
+}
+
+.pi-paper {
+  animation: paper-feed 2.6s ease-in-out infinite;
+}
+
+@keyframes paper-feed {
+  0%, 35% { transform: translateY(0); }
+  65%     { transform: translateY(3px); }
+  100%    { transform: translateY(0); }
 }
 
 .btn-approve:hover {
-  opacity: 0.8;
-  transform: translateY(-1px);
+  opacity: 0.88;
+  transform: translateY(-3px);
+}
+
+@keyframes approve-breathe {
+  0%, 100% { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+  50%       { box-shadow: 0 24px 80px rgba(0,0,0,0.30); }
+}
+
+.result-approve-label {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  text-align: center;
 }
 
 .btn-ghost {
@@ -429,11 +466,7 @@ html, body {
 }
 
 .gen-detail {
-  font-size: 11px;
-  color: var(--text-dim);
-  letter-spacing: 0.08em;
-  height: 16px;
-  transition: opacity 0.3s;
+  display: none;
 }
 
 /* Blur preview wrapper – centers image like result phase */
@@ -538,7 +571,18 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 18px;
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.result-approve-wrap.entered {
+  animation: approve-enter 1.1s var(--ease) forwards;
+}
+
+@keyframes approve-enter {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ─── PHASE 3 – FORENSIC SPLIT SCREEN ──────────────────────── */
@@ -559,7 +603,6 @@ html, body {
   gap: 10px;
   padding: 10px 32px;
   background: var(--bg);
-  border-bottom: 1px solid var(--border);
   transform: translateY(-100%);
   transition: transform 0.5s var(--ease);
   z-index: 10;
@@ -604,7 +647,7 @@ html, body {
 .split-side--your {
   width: 100%;
   flex-shrink: 0;
-  transition: width 1.3s var(--ease);
+  transition: width 2.2s var(--ease);
   justify-content: center;
 }
 
@@ -612,13 +655,12 @@ html, body {
   width: 0%;
   flex-shrink: 0;
   opacity: 0;
-  transform: translateX(48px);
+  transform: translateX(72px);
   background: var(--bg);
-  border-left: 1px solid var(--border);
   transition:
-    width 1.2s var(--ease),
-    opacity 0.7s ease 0.4s,
-    transform 1.1s var(--ease);
+    width 2.2s var(--ease),
+    opacity 1.0s ease 0.9s,
+    transform 2.0s var(--ease);
 }
 
 /* Reveal animation */
@@ -661,7 +703,6 @@ html, body {
 .split-source-img {
   width: 100%;
   height: 100%;
-  max-height: 55vh;
   position: relative;
   background: transparent;
   overflow: hidden;
@@ -671,14 +712,16 @@ html, body {
 }
 
 .split-source-img img {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   display: block;
   position: relative;
   z-index: 1;
   opacity: 0;
-  transition: opacity 1s ease;
+  transition: opacity 1.4s ease;
 }
 
 .split-source-img img.revealed {
@@ -702,30 +745,10 @@ html, body {
   pointer-events: none;
 }
 
-.source-overlay-id {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  color: var(--text-muted);
-}
+.source-overlay-id { display: none; }
 
-.split-caption {
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  text-align: center;
-}
-
-
-/* Source metadata */
-.split-source-meta {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
-  flex-shrink: 0;
-}
+.split-caption { display: none; }
+.split-source-meta { display: none; }
 
 .smeta-row {
   display: flex;
@@ -864,3 +887,14 @@ body.dark .gen-counters {
 /* Dark mode: forensic overlay */
 body.dark .source-overlay { background: #0d0d0d; }
 body.dark .split-side--source { background: var(--bg); }
+
+
+/* Dark mode: print button breathe */
+body.dark .btn-approve {
+  animation-name: approve-breathe-dark;
+}
+
+@keyframes approve-breathe-dark {
+  0%, 100% { box-shadow: 0 4px 20px rgba(240,240,240,0.04); }
+  50%       { box-shadow: 0 24px 80px rgba(240,240,240,0.18); }
+}
