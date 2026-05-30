@@ -304,7 +304,7 @@ html, body {
 .prompt-label {
   font-size: 9px;
   letter-spacing: 0.22em;
-  color: var(--text-dim);
+  color: #aaa;
   text-transform: uppercase;
 }
 
@@ -320,7 +320,7 @@ html, body {
   width: 100%;
 }
 
-.prompt-input::placeholder { color: var(--text-dim); }
+.prompt-input::placeholder { color: #aaa; }
 
 .prompt-footer {
   display: flex;
@@ -816,18 +816,18 @@ html, body {
   font-weight: 300;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  color: #111;
+  color: var(--text);
 }
 
 .reveal-body {
   font-size: 15px;
-  color: #777;
+  color: var(--text-muted);
   line-height: 1.7;
   max-width: 480px;
 }
 
 .highlight {
-  color: #111111;
+  color: var(--text);
   font-weight: 600;
 }
 
