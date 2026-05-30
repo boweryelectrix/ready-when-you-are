@@ -23,6 +23,7 @@ const TAGLINES = [
 
 // ── DOM refs ──────────────────────────────────────────────────
 const phases = {
+  carousel:   document.getElementById('phase-carousel'),
   intro:      document.getElementById('phase-intro'),
   generating: document.getElementById('phase-generating'),
   result:     document.getElementById('phase-result'),
@@ -70,12 +71,23 @@ const cbar3 = document.getElementById('cbar-3');
 const cbar4 = document.getElementById('cbar-4');
 const connLines = document.querySelectorAll('.conn-line');
 
+// ── Class name pool ───────────────────────────────────────────
+const CLASS_NAMES = [
+  'MARIE-THERESE BLECHA', 'JOÃO SOARES', 'LUCIE DIETERICH', 'NORA EROS',
+  'AARON GAAB', 'MAXIMILIAN GRÖSS', 'NIAYESH HABIBIAN', 'NIKI HERMKES',
+  'JOSCHUA KAPPEL', 'REBECCA KERBER', 'BARBARA KNAPP', 'FLORIAN KOGLER',
+  'NILS KOZELUHA', 'AIDA KUJUNDZIĆ', 'DOMINIK LEITNER', 'KHRYSTYNA MANUYLYK',
+  'JANINA MAULHARDT', 'VERENA MÜLLNER', 'STEPHANIE NEUBURG', 'HERA OH',
+  'DARIA PESHNYUK', 'MINNA ROTHBART', 'JULIA SCHÄFFLER', 'ARINA SHOKAREVA',
+  'JANA SIMIONOVICI', 'ANKA STIEBER', 'HANNAH STÖGER', 'TOBIAS TAKATS',
+  'LUKAS JUŠČIUS',
+];
+
 // ── Visual pairs (generated ↔ source mapping) ─────────────────
 const VISUAL_PAIRS = [
   {
     generated: 'images/generated-1.png',
     source: 'images/source-1.png',
-    author: 'L. WEBER',
     id: 'A-2024-0418',
     year: 2024,
     reason: 'Insufficient conceptual development'
@@ -83,7 +95,6 @@ const VISUAL_PAIRS = [
   {
     generated: 'images/generated-2.png',
     source: 'images/source-2.png',
-    author: 'M. KOWALSKI',
     id: 'A-2024-0291',
     year: 2024,
     reason: 'Not suitable for brand identity'
@@ -91,7 +102,6 @@ const VISUAL_PAIRS = [
   {
     generated: 'images/generated-3.png',
     source: 'images/source-3.png',
-    author: 'S. NAKAMURA',
     id: 'A-2023-0876',
     year: 2023,
     reason: 'Technical execution below threshold'
@@ -99,7 +109,6 @@ const VISUAL_PAIRS = [
   {
     generated: 'images/generated-4.png',
     source: 'images/source-4.png',
-    author: 'A. PETROV',
     id: 'A-2024-1102',
     year: 2024,
     reason: 'Aesthetic not aligned with programme'
@@ -162,8 +171,11 @@ generateBtn.addEventListener('click', startGenerating);
 function startGenerating() {
   setState(STATE.GENERATING);
 
-  // Select pair early so blur preview can start immediately
+  // Select pair and author from class list
   selectedPair = VISUAL_PAIRS[pairIndex % VISUAL_PAIRS.length];
+  selectedPair = Object.assign({}, selectedPair, {
+    author: CLASS_NAMES[pairIndex % CLASS_NAMES.length]
+  });
   pairIndex++;
   localStorage.setItem('pairIndex', pairIndex);
 
@@ -446,6 +458,7 @@ function finishPrinting() {
   if (revealAuthor) revealAuthor.textContent = sourceAuthor.textContent;
 
   showPhase('reveal');
+
 }
 
 // ── Thermal printer request ───────────────────────────────────
@@ -513,5 +526,19 @@ themeToggle.addEventListener('click', () => {
   localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
 });
 
-// ── Init ──────────────────────────────────────────────────────
-cycleTagline();
+// ── Carousel intro → prompt ───────────────────────────────────
+function launchIntro() {
+  showPhase('intro');
+  cycleTagline();
+}
+
+phases.carousel.addEventListener('click', launchIntro);
+
+// Type the carousel label — loops forever
+const carouselLabel = document.querySelector('.carousel-label');
+function loopCarouselLabel() {
+  typeText(carouselLabel, 'print ur own visual', 55, () => {
+    setTimeout(loopCarouselLabel, 1800);
+  });
+}
+loopCarouselLabel();

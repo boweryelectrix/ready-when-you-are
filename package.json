@@ -19,10 +19,10 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "get-pixels": "^3.3.3",
     "escpos": "^3.0.0-alpha.6",
     "escpos-usb": "^3.0.0-alpha.4",
     "express": "^4.18.2",
+    "get-pixels": "^3.3.3",
     "multer": "^2.1.1",
     "sharp": "^0.34.5",
     "usb": "^2.9.0"
