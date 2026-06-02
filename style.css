@@ -599,6 +599,7 @@ html, body {
   justify-content: flex-start;
   padding: 0;
   overflow: hidden;
+  background: var(--bg);
 }
 
 /* Forensic top bar */
@@ -639,7 +640,9 @@ html, body {
   width: 100%;
   height: 100vh;
   padding-top: 52px;
+  padding-bottom: 90px;
   align-items: stretch;
+  overflow: hidden;
 }
 
 .split-side {
@@ -647,8 +650,8 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 32px 24px 140px;
+  gap: 0;
+  padding: 0;
   overflow: hidden;
 }
 
@@ -664,7 +667,6 @@ html, body {
   flex-shrink: 0;
   opacity: 0;
   transform: translateX(72px);
-  background: var(--bg);
   transition:
     width 2.2s var(--ease),
     opacity 1.0s ease 0.9s,
@@ -685,27 +687,19 @@ html, body {
 
 .split-imgbox {
   flex: 1;
+  min-height: 0;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  max-height: calc(100% - 280px);
 }
 
 .split-canvas {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   display: block;
   object-fit: contain;
-  transition: max-height 1.3s var(--ease);
-}
-
-/* Before split, let the canvas grow taller */
-#split-your:not(.split-revealed) .split-canvas {
-  max-height: 75vh;
 }
 
 .split-source-img {
@@ -714,16 +708,11 @@ html, body {
   position: relative;
   background: transparent;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .split-source-img img {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   display: block;
   position: relative;
@@ -815,7 +804,8 @@ html, body {
   align-items: center;
   gap: 8px;
   margin-top: 24px;
-  padding-top: 20px;
+  padding: 28px 32px 20px;
+  background: linear-gradient(to top, var(--bg) 60%, transparent);
 }
 
 .forensic-reveal-bottom.visible {
@@ -826,12 +816,12 @@ html, body {
   font-size: clamp(18px, 3vw, 28px);
   font-weight: 300;
   letter-spacing: -0.02em;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .reveal-body-sm {
   font-size: 16px;
-  color: #ffffff;
+  color: var(--text);
   line-height: 1.3;
 }
 
@@ -842,7 +832,7 @@ html, body {
   left: 0; right: 0;
   font-size: 13px;
   letter-spacing: 0.1em;
-  color: #ffffff;
+  color: var(--text);
   text-align: center;
 }
 
@@ -1045,7 +1035,6 @@ body.dark .gen-counters {
 
 /* Dark mode: forensic overlay */
 body.dark .source-overlay { background: #0d0d0d; }
-body.dark .split-side--source { background: var(--bg); }
 
 
 /* Dark mode: print button breathe */

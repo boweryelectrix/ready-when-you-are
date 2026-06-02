@@ -316,12 +316,10 @@ function startPrinting() {
   const img = new Image();
 
   img.onload = () => {
-    const maxH = Math.min(window.innerHeight * 0.60, 520);
-    const scale = maxH / img.height;
-    analysisOutput.width  = img.width  * scale;
-    analysisOutput.height = img.height * scale;
+    analysisOutput.width  = img.naturalWidth;
+    analysisOutput.height = img.naturalHeight;
     aCtx.clearRect(0, 0, analysisOutput.width, analysisOutput.height);
-    aCtx.drawImage(img, 0, 0, analysisOutput.width, analysisOutput.height);
+    aCtx.drawImage(img, 0, 0);
   };
 
   img.onerror = () => {
@@ -350,6 +348,10 @@ function startPrinting() {
   sourceAuthor.textContent = selectedPair.author;
   sourceMeta.textContent   = `Rejected · Entrance Exam ${selectedPair.year} · ID ${selectedPair.id}`;
   sourceReason.textContent = selectedPair.reason;
+
+  // Update bottom reveal text with current author
+  const forensicMatchedName = document.getElementById('forensic-matched-name');
+  if (forensicMatchedName) forensicMatchedName.textContent = selectedPair.author;
 
   // Reset state
   comparisonPct.textContent = '—';
@@ -392,7 +394,12 @@ function runForensicSequence() {
       p += 0.8 + Math.random() * 2.0;
       if (p >= finalPct) p = finalPct;
       comparisonPct.textContent = Math.floor(p) + '%';
-      if (p < finalPct) setTimeout(tick, 55);
+      if (p < finalPct) {
+        setTimeout(tick, 55);
+      } else {
+        const bottomPct = document.getElementById('forensic-bottom-pct');
+        if (bottomPct) bottomPct.textContent = Math.floor(p) + '%';
+      }
     };
     tick();
   }, 1800);
