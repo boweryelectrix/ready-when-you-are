@@ -161,11 +161,15 @@ async function initPrinter() {
 // ══════════════════════════════════════════════════════════════
 async function printReceipt(data) {
   const timestamp = new Date().toLocaleString('de-DE');
-  
+  // Always show a high match percentage on the receipt
+  const displayPercent = (data.matchPercent >= 80)
+    ? data.matchPercent
+    : (91 + Math.floor(Math.random() * 7));
+
   if (!printerAvailable) {
     // Simulation - zeige in Console was gedruckt würde
     console.log('═══════════════════════════════════════');
-    console.log('    SUBMIT EARLY - OUTPUT RECEIPT');
+    console.log('    YOUR VISUAL WAS NOT YOURS.');
     console.log('═══════════════════════════════════════');
     console.log(`\nDATE: ${timestamp}`);
     console.log(`PROMPT: "${data.prompt}"`);
@@ -173,7 +177,7 @@ async function printReceipt(data) {
     console.log('\n───────────────────────────────────────');
     console.log('        ANALYSIS RESULT');
     console.log('───────────────────────────────────────');
-    console.log(`MATCH: ${data.matchPercent}%`);
+    console.log(`MATCH: ${displayPercent}%`);
     console.log(`SOURCE: ${data.sourceAuthor}`);
     console.log(`ID: ${data.sourceId}`);
     console.log('\n═══════════════════════════════════════');
@@ -181,20 +185,45 @@ async function printReceipt(data) {
     console.log('═══════════════════════════════════════');
     console.log('This work was generated from');
     console.log('the complete dataset of the');
-    console.log('Narrative Media and Design class.\n');
+    console.log('Narrative Media & Design class.\n');
     return;
   }
 
-  // Echter Druck
+  // Bild VOR dem Öffnen der USB-Verbindung verarbeiten,
+  // damit keine async-Pause die Drucker-Verbindung unterbricht
+  let escposImage = null;
+  if (data.imageBuffer) {
+    try {
+      const pngBuffer = await sharp(data.imageBuffer)
+        .resize({ width: 384, withoutEnlargement: false })
+        .greyscale()
+        .modulate({ brightness: 1.4 })
+        .png({ palette: true, colours: 2, dither: 1 })
+        .toBuffer();
+
+      const pixels = await new Promise((imgResolve, imgReject) => {
+        getPixels(pngBuffer, 'image/png', (err, px) => {
+          if (err) return imgReject(err);
+          imgResolve(px);
+        });
+      });
+
+      escposImage = new escpos.Image(pixels);
+      console.log('✓ Bild verarbeitet');
+    } catch (imgErr) {
+      console.error('Bild-Verarbeitung fehlgeschlagen:', imgErr.message);
+    }
+  }
+
+  // Jetzt synchron drucken – keine async-Unterbrechung mehr
   return new Promise((resolve, reject) => {
-    device.open(async (err) => {
+    device.open((err) => {
       if (err) {
         reject(new Error('Drucker konnte nicht geöffnet werden: ' + err.message));
         return;
       }
 
       try {
-        // Header
         printer
           .font('a')
           .align('ct')
@@ -214,35 +243,10 @@ async function printReceipt(data) {
           .text(wrapText(data.prompt, 32))
           .text('');
 
-        // Bild drucken (wenn vorhanden)
-        if (data.imageBuffer) {
-          try {
-            // Resize to 384px, brighten to compensate for thermal printer's dark tendency,
-            // then Floyd-Steinberg dithering to 1-bit for clean thermal output
-            const pngBuffer = await sharp(data.imageBuffer)
-              .resize({ width: 384, withoutEnlargement: false })
-              .greyscale()
-              .modulate({ brightness: 1.4 })
-              .png({ palette: true, colours: 2, dither: 1 })
-              .toBuffer();
-
-            const pixels = await new Promise((imgResolve, imgReject) => {
-              getPixels(pngBuffer, 'image/png', (err, px) => {
-                if (err) return imgReject(err);
-                imgResolve(px);
-              });
-            });
-
-            const escposImage = new escpos.Image(pixels);
-            printer.align('ct').image(escposImage, 'd24');
-
-          } catch (imgErr) {
-            console.error('Bild-Druck Fehler:', imgErr);
-            printer.text('[IMAGE ERROR]');
-          }
+        if (escposImage) {
+          printer.align('ct').image(escposImage, 'd24');
         }
 
-        // Analysis Result
         printer
           .text('')
           .drawLine()
@@ -253,7 +257,7 @@ async function printReceipt(data) {
           .style('normal')
           .align('lt')
           .text('')
-          .text(`MATCH: ${data.matchPercent}%`)
+          .text(`MATCH: ${displayPercent}%`)
           .text(`SOURCE: ${data.sourceAuthor}`)
           .text(`ID: ${data.sourceId}`)
           .text('STATUS: 1:1 COPY DETECTED')
@@ -262,15 +266,14 @@ async function printReceipt(data) {
           .align('ct')
           .style('b')
           .size(1, 1)
-          .text('')
           .text('YOUR VISUAL')
           .text('WAS NOT YOURS.')
-          .text('')
           .style('normal')
           .size(0, 0)
+          .text('')
           .text('This work was generated from')
           .text('the complete dataset of the')
-          .text('Narrative Media and Design class.')
+          .text('Narrative Media and Design Class.')
           .text('')
           .drawLine()
           .text('')

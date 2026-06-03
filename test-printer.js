@@ -80,8 +80,6 @@ device.open((err) => {
     .drawLine()
     .text('')
     .align('ct')
-    .text('angewandte.at/submit-early')
-    .text('')
     .text('')
     .cut()
     .close(() => {

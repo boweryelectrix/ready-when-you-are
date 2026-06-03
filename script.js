@@ -468,11 +468,16 @@ function finishPrinting() {
 
 // ── Thermal printer request ───────────────────────────────────
 async function sendToPrinter() {
-  printStatus.textContent = '';
+  if (window.location.protocol === 'file:') {
+    printStatus.textContent = '⚠ Öffne http://localhost:3000 — nicht file://';
+    return;
+  }
+
+  printStatus.textContent = 'Sending to printer…';
 
   try {
     const imgResponse = await fetch(selectedPair.generated);
-    if (!imgResponse.ok) throw new Error('Could not load image file');
+    if (!imgResponse.ok) throw new Error('Image load failed (' + imgResponse.status + ')');
     const imageBlob = await imgResponse.blob();
 
     const formData = new FormData();
@@ -484,19 +489,18 @@ async function sendToPrinter() {
     formData.append('userGenerated', 'ANONYMOUS');
 
     const printResponse = await fetch('/api/print', { method: 'POST', body: formData });
+    if (!printResponse.ok) throw new Error('Server error ' + printResponse.status);
     const result = await printResponse.json();
 
     if (result.success) {
-      printStatus.textContent = result.printerAvailable
-        ? '✓ Printed.'
-        : '✓ Print simulated';
+      printStatus.textContent = result.printerAvailable ? '✓ Printed.' : '✓ Print simulated';
     } else {
       printStatus.textContent = 'Print error: ' + result.error;
       console.error('Print error from server:', result.error);
     }
   } catch (err) {
     console.error('Print fetch error:', err);
-    printStatus.textContent = 'Failed to reach printer. Check server.';
+    printStatus.textContent = 'Error: ' + err.message;
   }
 }
 
