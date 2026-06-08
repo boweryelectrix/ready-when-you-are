@@ -18,7 +18,7 @@
   <!-- PHASE CAROUSEL: 3D rotating ring of visuals -->
   <div id="phase-carousel" class="phase active">
     <span class="corner-label">© Narrative Media &amp; Design</span>
-<div class="carousel-scene">
+    <div class="carousel-scene">
       <div class="carousel-ring">
         <div class="carousel-item" style="--i:0"><img src="images/generated-1.png" alt=""></div>
         <div class="carousel-item" style="--i:1"><img src="images/source-1.png" alt=""></div>
@@ -29,29 +29,66 @@
         <div class="carousel-item" style="--i:6"><img src="images/generated-4.png" alt=""></div>
         <div class="carousel-item" style="--i:7"><img src="images/source-4.png" alt=""></div>
       </div>
-      <div class="carousel-label">print ur own visual</div>
+      <div class="carousel-label"></div>
+    </div>
+    <div class="carousel-cta">
+      <button id="start-print-btn" class="btn-primary carousel-print-btn">Click to Print</button>
     </div>
   </div>
 
-  <!-- PHASE 0: INTRO -->
-  <div id="phase-intro" class="phase">
+  <!-- hidden stubs so JS DOM refs don't throw -->
+  <div id="phase-intro" style="display:none">
+    <p id="tagline"></p>
+    <textarea id="user-prompt"></textarea>
+    <span id="char-count"></span>
+    <button id="generate-btn"></button>
+  </div>
+
+  <!-- PHASE FORM: name + birthdate -->
+  <div id="phase-form" class="phase">
     <div class="intro-header">
-      <span class="system-label">SYSTEM READY</span>
+      <span class="system-label">REGISTRATION</span>
       <span class="blink-dot"></span>
     </div>
-    <div class="tagline-container">
-      <p id="tagline" class="tagline"></p>
-    </div>
-    <div class="prompt-area">
-      <div class="prompt-wrapper">
-        <label class="prompt-label" for="user-prompt">Enter your prompt</label>
-        <textarea id="user-prompt" class="prompt-input" rows="3" placeholder="Make your own visual" maxlength="400" spellcheck="false"></textarea>
-        <span id="char-count" class="char-count">0 / 400</span>
+    <div class="form-card">
+      <div class="form-letterhead">
+        <div class="form-lh-left">
+          <span class="form-lh-inst">Design &amp; Narrative Media</span>
+          <span class="form-lh-dept">University of Applied Arts Vienna · S26</span>
+        </div>
+        <div class="form-lh-right">
+          <span class="form-lh-ref">FORM NMD–2026–001</span>
+          <span class="form-lh-class">DIPLOMA APPLICATION</span>
+        </div>
       </div>
-      <div class="prompt-footer">
-        <button id="generate-btn" class="btn-primary" disabled>Generate</button>
+
+      <div class="form-title-row">
+        <span class="form-big-title">GetYourDANMDiploma™®</span>
+        <span class="form-title-note">Complete all fields before printing</span>
       </div>
-      <p class="disclaimer">By continuing you agree to our <span class="underline">Terms of Use</span> and <span class="underline">Data Policy</span>.</p>
+
+      <div class="form-fields-table">
+        <div class="form-entry">
+          <div class="form-entry-body">
+            <label class="form-label" for="user-name">Full Name</label>
+            <input type="text" id="user-name" class="form-input" placeholder="—" autocomplete="off" spellcheck="false" />
+            <div class="form-rule"></div>
+          </div>
+        </div>
+
+        <div class="form-entry">
+          <div class="form-entry-body">
+            <label class="form-label" for="user-birthdate">Date of Birth</label>
+            <input type="date" id="user-birthdate" class="form-input form-input-date" />
+            <div class="form-rule"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-footer-row">
+        <span class="form-footer-cert">By submitting this form you certify that you have not completed your diploma on your own.</span>
+        <button id="form-submit-btn" class="btn-primary" disabled>Print Diploma</button>
+      </div>
     </div>
   </div>
 
@@ -101,10 +138,9 @@
 
     <!-- Reveal text top -->
     <div class="forensic-reveal-text forensic-reveal-top" id="forensic-reveal-top">
-      <h2 class="reveal-headline-sm">Your visual was not yours.</h2>
+      <h2 class="reveal-headline-sm">Your diploma was not yours.</h2>
       <p class="reveal-body-sm">
-        Generated from the complete dataset of the <span class="highlight">Narrative Media and Design class</span>.<br>
-        Their work trained the model. Your prompt directed it.
+        Generated from the complete dataset of the <span class="highlight">Narrative Media and Design class</span>.
       </p>
     </div>
 

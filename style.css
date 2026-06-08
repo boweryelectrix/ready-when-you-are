@@ -223,6 +223,154 @@ html, body {
   pointer-events: all;
 }
 
+/* ─── PHASE FORM ────────────────────────────────────────────── */
+#phase-form { gap: 0; }
+
+.form-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(600px, 92vw);
+  background: var(--bg);
+}
+
+/* Letterhead */
+.form-letterhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 18px 28px 16px;
+}
+
+.form-lh-left, .form-lh-right {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.form-lh-right { align-items: flex-end; }
+
+.form-lh-inst {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.form-lh-dept, .form-lh-ref, .form-lh-class {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Title row */
+.form-title-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 22px 28px 20px;
+}
+
+.form-big-title {
+  font-size: clamp(20px, 3.5vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--text);
+}
+
+.form-title-note {
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Fields table */
+.form-fields-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-entry-index {
+  display: flex;
+  justify-content: center;
+  padding-top: 22px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+}
+
+.form-entry-body {
+  padding: 18px 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-label {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.form-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 26px;
+  width: 100%;
+  line-height: 1.2;
+}
+
+.form-input::placeholder { color: var(--text-dim); }
+
+.form-rule {
+  height: 1px;
+  background: var(--text-dim);
+  transition: background 0.25s;
+}
+
+/* date input */
+.form-input-date {
+  cursor: pointer;
+  color-scheme: light;
+}
+
+body.dark .form-input-date { color-scheme: dark; }
+
+.form-input-date::-webkit-calendar-picker-indicator {
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+/* Footer */
+.form-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 24px 16px 28px;
+}
+
+.form-footer-cert {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  line-height: 1.7;
+  color: var(--text-muted);
+  max-width: 300px;
+  text-transform: uppercase;
+}
+
 /* ─── PHASE 0 – INTRO ───────────────────────────────────────── */
 #phase-intro { gap: 40px; }
 
@@ -908,8 +1056,26 @@ html, body {
 /* ─── PHASE CAROUSEL – 3D orbiting ring ─────────────────────── */
 #phase-carousel {
   perspective: 900px;
-  cursor: pointer;
   overflow: hidden;
+}
+
+.carousel-cta {
+  position: absolute;
+  bottom: 12vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.carousel-print-btn {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+}
+
+.carousel-print-btn.visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .carousel-scene {

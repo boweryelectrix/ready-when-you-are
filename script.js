@@ -11,7 +11,7 @@ function setState(s) { appState = s; }
 
 // ── Tagline ───────────────────────────────────────────────────
 const TAGLINES = [
-  "Ready when you are.",
+  "Get your DAMN diploma.",
   "What will you create today?",
   "Describe your vision.",
   "Turn words into visuals.",
@@ -25,6 +25,7 @@ const TAGLINES = [
 const phases = {
   carousel:   document.getElementById('phase-carousel'),
   intro:      document.getElementById('phase-intro'),
+  form:       document.getElementById('phase-form'),
   generating: document.getElementById('phase-generating'),
   result:     document.getElementById('phase-result'),
   printing:   document.getElementById('phase-printing'),
@@ -116,6 +117,8 @@ const VISUAL_PAIRS = [
 
 let selectedPair  = null;
 let userPrompt    = '';
+let userName      = '';
+let userBirth     = '';
 let dataGridInterval = null; // kept for legacy stopDataGridAnimation no-op
 // pairIndex überlebt Seiten-Reloads via localStorage
 // Startet bei 2 damit sofort Pair 3 & 4 dran kommen
@@ -246,7 +249,7 @@ function runGeneratingPhase() {
 
   const advance = () => {
     if (stepIdx >= GEN_STEPS.length) {
-      setTimeout(transitionToResult, 700);
+      setTimeout(startPrinting, 700);
       return;
     }
     const [pct, label] = GEN_STEPS[stepIdx++];
@@ -486,7 +489,8 @@ async function sendToPrinter() {
     formData.append('sourceAuthor', selectedPair.author);
     formData.append('sourceId', selectedPair.id);
     formData.append('matchPercent', comparisonPct.textContent.replace('%', '').trim() || '0');
-    formData.append('userGenerated', 'ANONYMOUS');
+    formData.append('userGenerated', userName || 'ANONYMOUS');
+    formData.append('birthDate', userBirth || '');
 
     const printResponse = await fetch('/api/print', { method: 'POST', body: formData });
     if (!printResponse.ok) throw new Error('Server error ' + printResponse.status);
@@ -509,9 +513,6 @@ restartBtn.addEventListener('click', () => {
   setState(STATE.IDLE);
   progressBar.style.width = '0%';
   resultCanvas.classList.remove('visible');
-  promptInput.value = '';
-  charCount.textContent = '0 / 400';
-  generateBtn.disabled = true;
   gmCorpus.textContent = '—';
   gmRejected.textContent = '—';
   gmDims.textContent = '—';
@@ -527,7 +528,19 @@ restartBtn.addEventListener('click', () => {
   if (revBot) revBot.classList.remove('visible');
   if (sourceOverlay) sourceOverlay.classList.remove('hidden');
   document.querySelector('.result-approve-wrap').classList.remove('entered');
-  showPhase('intro');
+
+  // Clear form
+  userNameInput.value  = '';
+  userBirthInput.value = '';
+  formSubmitBtn.disabled = true;
+
+  // Back to carousel, re-type tagline then reveal button
+  startPrintBtn.classList.remove('visible');
+  carouselLabel.textContent = '';
+  showPhase('carousel');
+  typeText(carouselLabel, 'GetYourDANMDiploma™®', 55, () => {
+    setTimeout(() => startPrintBtn.classList.add('visible'), 400);
+  });
 });
 
 // ── Theme toggle ──────────────────────────────────────────────
@@ -539,19 +552,44 @@ themeToggle.addEventListener('click', () => {
   localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
 });
 
-// ── Carousel intro → prompt ───────────────────────────────────
-function launchIntro() {
-  showPhase('intro');
-  cycleTagline();
+// ── Carousel start screen ─────────────────────────────────────
+const carouselLabel  = document.querySelector('.carousel-label');
+const startPrintBtn  = document.getElementById('start-print-btn');
+
+// Pre-select a pair on load
+selectedPair = VISUAL_PAIRS[pairIndex % VISUAL_PAIRS.length];
+selectedPair = Object.assign({}, selectedPair, {
+  author: CLASS_NAMES[pairIndex % CLASS_NAMES.length]
+});
+
+// Type the tagline, then reveal the button
+typeText(carouselLabel, 'GetYourDANMDiploma™®', 55, () => {
+  setTimeout(() => startPrintBtn.classList.add('visible'), 400);
+});
+
+startPrintBtn.addEventListener('click', () => {
+  showPhase('form');
+  userNameInput.focus();
+});
+
+// ── Form inputs ───────────────────────────────────────────────
+const userNameInput  = document.getElementById('user-name');
+const userBirthInput = document.getElementById('user-birthdate');
+const formSubmitBtn  = document.getElementById('form-submit-btn');
+
+function validateForm() {
+  formSubmitBtn.disabled =
+    userNameInput.value.trim().length < 2 ||
+    userBirthInput.value.trim().length < 1;
 }
 
-phases.carousel.addEventListener('click', launchIntro);
+userNameInput.addEventListener('input', validateForm);
+userBirthInput.addEventListener('change', validateForm);
 
-// Type the carousel label — loops forever
-const carouselLabel = document.querySelector('.carousel-label');
-function loopCarouselLabel() {
-  typeText(carouselLabel, 'Print your own visual', 55, () => {
-    setTimeout(loopCarouselLabel, 1800);
-  });
-}
-loopCarouselLabel();
+formSubmitBtn.addEventListener('click', () => {
+  userName  = userNameInput.value.trim();
+  const raw = userBirthInput.value; // YYYY-MM-DD
+  userBirth = raw ? raw.split('-').reverse().join('.') : '';
+  userPrompt = '';
+  startGenerating();
+});

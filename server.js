@@ -67,7 +67,7 @@ app.get('/', (req, res) => {
 app.post('/api/print', upload.single('image'), async (req, res) => {
   console.log('\n📄 Print-Anfrage erhalten...');
 
-  const { prompt, sourceAuthor, sourceId, matchPercent, userGenerated, imageData } = req.body;
+  const { prompt, sourceAuthor, sourceId, matchPercent, userGenerated, birthDate, imageData } = req.body;
   let imageBuffer = req.file ? req.file.buffer : null;
 
   if (!imageBuffer && imageData) {
@@ -109,7 +109,8 @@ app.post('/api/print', upload.single('image'), async (req, res) => {
       sourceAuthor: sourceAuthor || 'UNKNOWN',
       sourceId: sourceId || 'UNKNOWN',
       matchPercent: Number(matchPercent) || 0,
-      userGenerated: userGenerated || 'ANONYMOUS'
+      userGenerated: userGenerated || 'ANONYMOUS',
+      birthDate: birthDate || ''
     });
 
     printerAvailable = origAvailable;
@@ -169,7 +170,7 @@ async function printReceipt(data) {
   if (!printerAvailable) {
     // Simulation - zeige in Console was gedruckt würde
     console.log('═══════════════════════════════════════');
-    console.log('    YOUR VISUAL WAS NOT YOURS.');
+    console.log('    YOUR DIPLOMA WAS NOT YOURS.');
     console.log('═══════════════════════════════════════');
     console.log(`\nDATE: ${timestamp}`);
     console.log(`PROMPT: "${data.prompt}"`);
@@ -181,7 +182,7 @@ async function printReceipt(data) {
     console.log(`SOURCE: ${data.sourceAuthor}`);
     console.log(`ID: ${data.sourceId}`);
     console.log('\n═══════════════════════════════════════');
-    console.log('   YOUR VISUAL WAS NOT YOURS.');
+    console.log('   YOUR DIPLOMA WAS NOT YOURS.');
     console.log('═══════════════════════════════════════');
     console.log('This work was generated from');
     console.log('the complete dataset of the');
@@ -229,7 +230,7 @@ async function printReceipt(data) {
           .align('ct')
           .style('b')
           .size(1, 1)
-          .text('YOUR VISUAL')
+          .text('YOUR DIPLOMA')
           .text('WAS NOT YOURS.')
           .drawLine()
           .style('normal')
@@ -237,10 +238,9 @@ async function printReceipt(data) {
           .text('')
           .align('lt')
           .text(`DATE: ${timestamp}`)
-          .text(`USER: ${data.userGenerated || 'ANONYMOUS'}`)
+          .text(`NAME: ${data.userGenerated || 'ANONYMOUS'}`)
+          .text(`BORN: ${data.birthDate || '—'}`)
           .text('')
-          .text('PROMPT:')
-          .text(wrapText(data.prompt, 32))
           .text('');
 
         if (escposImage) {
@@ -266,7 +266,7 @@ async function printReceipt(data) {
           .align('ct')
           .style('b')
           .size(1, 1)
-          .text('YOUR VISUAL')
+          .text('YOUR DIPLOMA')
           .text('WAS NOT YOURS.')
           .style('normal')
           .size(0, 0)
